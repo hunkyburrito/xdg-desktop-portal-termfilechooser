@@ -1,4 +1,4 @@
 [portal]
 DBusName=org.freedesktop.impl.portal.desktop.termfilechooser
 Interfaces=org.freedesktop.impl.portal.FileChooser;
-UseIn=i3;wlroots;sway;Wayfire;river;mate;lxde;openbox;unity;pantheon
+UseIn=i3;wlroots;sway;Wayfire;river;mate;lxde;openbox;unity;pantheon;Hyprland;dwl
