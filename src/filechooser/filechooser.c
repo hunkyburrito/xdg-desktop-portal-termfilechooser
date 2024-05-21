@@ -64,12 +64,15 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     return -1;
   }
 
-  size_t num_lines = 0;
+  size_t nchars = 0, num_lines = 0;
   int cr;
   do {
     cr = getc(fp);
+    nchars++;
     if (cr == '\n') {
-      num_lines++;
+      if (nchars > 1)
+        num_lines++;
+      nchars = 0;
     }
     if (ferror(fp)) {
       return 1;
@@ -77,8 +80,13 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
   } while (cr != EOF);
   rewind(fp);
 
-  if (num_lines == 0) {
+  if (num_lines == 0 && nchars > 1) {
     num_lines = 1;
+  }
+
+  if (num_lines == 0) {
+    fclose(fp);
+    return -1;
   }
 
   *num_selected_files = num_lines;
