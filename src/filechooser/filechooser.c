@@ -64,7 +64,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
   }
 
   size_t num_lines = 0;
-  char cr;
+  int cr;
   do {
     cr = getc(fp);
     if (cr == '\n') {
