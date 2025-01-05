@@ -25,11 +25,19 @@ Based on [xdg-desktop-portal-wlr] (xdpw).
 
 ### Dependencies
 
-Install the required packages. On apt-based systems:
+Install the required packages for your distribution.
+
+On apt-based systems:
 
     sudo apt install xdg-desktop-portal build-essential ninja-build meson libinih-dev libsystemd-dev scdoc
 
-For Arch, see the dependencies in the [AUR package](https://aur.archlinux.org/packages/xdg-desktop-portal-termfilechooser-hunkyburrito-git#pkgdeps).
+On Alpine/postmarketOS:
+
+    sudo apk add meson ninja-build clang cmake pkgconfig inih-dev basu-dev scdoc xdg-desktop-portal
+
+On Arch, either use the available [AUR package](https://aur.archlinux.org/packages/xdg-desktop-portal-termfilechooser-hunkyburrito-git), or use the following:
+
+    sudo pacman -S xdg-desktop-portal libinih ninja meson scdoc git
 
 ### Download the source
 
@@ -42,16 +50,23 @@ For Arch, see the dependencies in the [AUR package](https://aur.archlinux.org/pa
     ninja -C build
     ninja -C build install  # run with superuser privileges
 
+On Alpine/postmarketOS, copy the configs to the right place:
+
+    mkdir -p ~/.config/xdg-desktop-portal-termfilechooser/
+    sudo cp ~/Downloads/xdg-desktop-portal-termfilechooser/contrib/config ~/.config/xdg-desktop-portal-termfilechooser/
+    sudo cp ~/Downloads/xdg-desktop-portal-termfilechooser/contrib/yazi-wrapper.sh ~/.config/xdg-desktop-portal-termfilechooser/
+    sudo cp ~/Downloads/xdg-desktop-portal-termfilechooser/termfilechooser.portal /usr/share/xdg-desktop-portal/portals/
+
 On Debian, move the `termfilechooser.portal` file:
 
     sudo mv /usr/local/share/xdg-desktop-portal/portals/termfilechooser.portal /usr/share/xdg-desktop-portal/portals/
 
 ### Config files
 
-Copy the `config` and any of the wrapper scripts in `contrib` dir to `~/.config/xdg-desktop-portal-termfilechooser`. Edit the `config` file to set your preferred terminal emulator and file manager applications.
+Copy the `config` and any desired wrapper scripts in the `contrib` dir to `~/.config/xdg-desktop-portal-termfilechooser`. Edit the `config` file to set your preferred terminal emulator and file manager applications.
 
-For terminal emulator. You can set the `TERMCMD` environment variable instead of edit wrapper file. So you only need to copy `config`. By default wrappers
-is placed at `/usr/local/share/xdg-desktop-portal-termfilechooser/`
+For setting your terminal emulator, you can set the `TERMCMD` environment variable instead of editing the wrapper file. This way you only need to copy `config`. By default, wrappers
+are placed in `/usr/local/share/xdg-desktop-portal-termfilechooser/`
 
 Example:
 
@@ -122,7 +137,7 @@ and additional options: `--multiple`, `--directory`, `--save`.
 
 
     This way the output from the wrapper scripts (e.g. `ranger-wrapper.sh`) will be written to the same terminal. This is handy for using e.g. `set -x` in the scripts during debugging.
-    When termfilechooser runs as a `systemd` service, its output can be viewer with `journalctl`.
+    When termfilechooser runs as a `systemd` service, its output can be viewed with `journalctl`.
 
 -   Since [this merge request in GNOME](https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/4829), `GTK_USE_PORTAL=1` seems to be replaced with `GDK_DEBUG=portals`.
 
