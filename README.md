@@ -29,11 +29,11 @@ Install the required packages. On apt-based systems:
 
     sudo apt install xdg-desktop-portal build-essential ninja-build meson libinih-dev libsystemd-dev scdoc
 
-For Arch, see the dependencies in the [AUR package](https://aur.archlinux.org/packages/xdg-desktop-portal-termfilechooser-fix-for-lf-git#pkgdeps).
+For Arch, see the dependencies in the [AUR package](https://aur.archlinux.org/packages/xdg-desktop-portal-termfilechooser-hunkyburrito-git#pkgdeps).
 
 ### Download the source
 
-    git clone https://github.com/boydaihungst/xdg-desktop-portal-termfilechooser
+    git clone https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser
 
 ### Build
 
@@ -80,7 +80,7 @@ If your xdg-desktop-portal version
     /usr/libexec/xdg-desktop-portal --version
     # OR, if it says file not found
     /usr/lib64/xdg-desktop-portal --version
-    
+
 
 is >= [`1.18.0`](https://github.com/flatpak/xdg-desktop-portal/releases/tag/1.18.0), then you can specify the portal for FileChooser in `~/.config/xdg-desktop-portal/portals.conf` file (see the [flatpak docs](https://flatpak.github.io/xdg-desktop-portal/docs/portals.conf.html) and [ArchWiki](https://wiki.archlinux.org/title/XDG_Desktop_Portal#Configuration)):
 
@@ -120,7 +120,7 @@ and additional options: `--multiple`, `--directory`, `--save`.
           systemctl --user stop xdg-desktop-portal-termfilechooser.service
           /usr/lib64/xdg-desktop-portal-termfilechooser -l TRACE -r &
 
-    
+
     This way the output from the wrapper scripts (e.g. `ranger-wrapper.sh`) will be written to the same terminal. This is handy for using e.g. `set -x` in the scripts during debugging.
     When termfilechooser runs as a `systemd` service, its output can be viewer with `journalctl`.
 
