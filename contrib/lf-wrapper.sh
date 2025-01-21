@@ -26,10 +26,10 @@ directory="$2"
 save="$3"
 path="$4"
 out="$5"
-cmd="/usr/bin/lf"
-termcmd="/usr/bin/kitty"
+cmd="lf"
+termcmd="kitty"
 if [ "$save" = "1" ]; then
-	# /usr/bin/touch $path
+	# touch $path
 	set -- -selection-path "$out" "$path"
 	printf '%s' 'xdg-desktop-portal-termfilechooser saving files tutorial
 
@@ -60,5 +60,5 @@ else
 fi
 $termcmd $cmd "$@"
 if [ "$save" = "1" ] && [ ! -s "$out" ]; then
-	/usr/bin/rm "$path"
+	rm "$path"
 fi
