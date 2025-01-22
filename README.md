@@ -68,7 +68,7 @@ export TERMCMD="wezterm start --always-new-process"
 ```conf
 [filechooser]
 cmd=/usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
-default_dir=$HOME
+default_dir=$HOME/Downloads
 ```
 
 ### Disable the original file picker portal
