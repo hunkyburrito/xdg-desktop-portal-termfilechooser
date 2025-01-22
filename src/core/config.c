@@ -1,7 +1,7 @@
 #include "config.h"
-#include "xdpw.h"
 #include "logger.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

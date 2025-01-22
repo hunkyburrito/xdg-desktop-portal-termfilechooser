@@ -10,8 +10,6 @@
 #endif
 
 #include <stdbool.h>
-#include <errno.h>
-#include <stdlib.h>
 
 #include "config.h"
 

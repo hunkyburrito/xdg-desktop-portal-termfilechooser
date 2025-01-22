@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // edited to exclude encoding/decoding the '/' character
 
-#include <stdlib.h>
+#include <stddef.h>
 #include <inttypes.h>
 
 #define _______ "\0\0\0\0"

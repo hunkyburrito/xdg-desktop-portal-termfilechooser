@@ -33,6 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "uri.h"
+#include <stddef.h>
+#include <stdint.h>
 
 /*
  uri.c - functions for URI percent encoding / decoding

@@ -1,4 +1,3 @@
-#include "filechooser.h"
 #include "uri.h"
 #include "xdpw.h"
 #include <errno.h>
