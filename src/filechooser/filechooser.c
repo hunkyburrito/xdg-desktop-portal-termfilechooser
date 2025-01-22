@@ -30,11 +30,11 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     path = "";
   }
 
-  size_t str_size = snprintf(NULL, 0, "%s %d %d %d \"%s\" \"%s\"", cmd_script,
+  size_t str_size = snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\'", cmd_script,
                              multiple, directory, writing, path, PATH_PORTAL) +
                     1;
   char *cmd = malloc(str_size);
-  snprintf(cmd, str_size, "%s %d %d %d \"%s\" \"%s\"", cmd_script, multiple,
+  snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\'", cmd_script, multiple,
            directory, writing, path, PATH_PORTAL);
 
   // Check if the portal file exists and have read write permission
