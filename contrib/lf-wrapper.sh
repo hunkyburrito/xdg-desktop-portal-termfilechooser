@@ -27,7 +27,7 @@ save="$3"
 path="$4"
 out="$5"
 cmd="lf"
-termcmd="kitty"
+termcmd="${TERMCMD:-kitty}"
 if [ "$save" = "1" ]; then
 	# touch $path
 	set -- -selection-path "$out" "$path"
