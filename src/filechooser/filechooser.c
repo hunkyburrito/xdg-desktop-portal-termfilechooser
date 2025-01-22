@@ -1,10 +1,12 @@
 #include "filechooser.h"
+#include "uri.h"
 #include "xdpw.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -86,6 +88,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
   for (size_t i = 0; i < num_lines; i++) {
     size_t n = 0;
     char *line = NULL;
+    char *encoded = NULL;
     ssize_t nread = getline(&line, &n, fp);
     if (ferror(fp)) {
       free(line);
@@ -95,13 +98,16 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
       free(*selected_files);
       return 1;
     }
-    size_t str_size = nread + strlen(PATH_PREFIX) + 1;
-    if (line[nread - 1] == '\n') {
-      str_size -= 1;
+    encoded = malloc(nread * 3 + 1); // if all chars are encoded, size = orig_size * 3 + 1
+    size_t nenc = uri_encode(line, nread, encoded);
+    size_t str_size = nenc + strlen(PATH_PREFIX) + 1;
+    if (! strcmp(encoded + nenc - 3, "%0A")) { // last char equal '\n'
+      str_size -= 3;
     }
     (*selected_files)[i] = malloc(str_size);
-    snprintf((*selected_files)[i], str_size, "%s%s", PATH_PREFIX, line);
+    snprintf((*selected_files)[i], str_size, "%s%s", PATH_PREFIX, encoded);
     free(line);
+    free(encoded);
   }
   (*selected_files)[num_lines] = NULL;
 

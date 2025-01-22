@@ -56,6 +56,7 @@ xdpw_files = files([
     'src/core/config.c',
     'src/core/request.c',
     'src/filechooser/filechooser.c',
+    'src/filechooser/uri.c'
 ])
 
 executable(
