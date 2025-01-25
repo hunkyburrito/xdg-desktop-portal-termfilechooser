@@ -63,11 +63,10 @@ On Debian, move the `termfilechooser.portal` file:
 
 ### Config files
 
-Copy the `config` and any desired wrapper scripts in the `contrib` dir to `~/.config/xdg-desktop-portal-termfilechooser`. Edit the `config` file to set your preferred terminal emulator and file manager applications.
+By default, the contents of the `contrib` folder are placed in `/usr/local/share/xdg-desktop-portal-termfilechooser/`.
+Copy the `config` to `~/.config/xdg-desktop-portal-termfilechooser` and edit it to set your preferred wrapper and default directory.
 
-For setting your terminal emulator, you can set the `TERMCMD` environment variable instead of editing the wrapper file. This way you only need to copy `config`. By default, wrappers
-are placed in `/usr/local/share/xdg-desktop-portal-termfilechooser/`
-
+To set your terminal emulator, you can use the `TERMCMD` environment variable instead of editing the wrapper file directly. This environment variable can also be set in the `cmd` key in the `config` if so desired (this is shown in the 2nd example below).
 Example:
 
 -   `$HOME/.profile`
@@ -82,7 +81,7 @@ export TERMCMD="wezterm start --always-new-process"
 
 ```conf
 [filechooser]
-cmd=/usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
+cmd=TERMCMD='wezterm start --always-new-process' /usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
 default_dir=$HOME/Downloads
 ```
 
