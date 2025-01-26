@@ -33,7 +33,7 @@ termcmd="${TERMCMD:-kitty}"
 
 # change this to "/tmp/xxxxxxx/.last_selected" if you only want to save last selected location \ in session (flushed after reset device)
 last_selected_path_cfg="${XDG_STATE_HOME:-$HOME/.local/state}/xdg-desktop-portal-termfilechooser/.last_selected"
-mkdir -p "$(dirname last_selected_path_cfg)"
+mkdir -p "$(dirname "$last_selected_path_cfg")"
 if [ ! -f "$last_selected_path_cfg" ]; then
     touch "$last_selected_path_cfg"
 fi
