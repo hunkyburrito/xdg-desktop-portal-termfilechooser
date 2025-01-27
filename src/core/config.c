@@ -196,6 +196,28 @@ static char *get_config_path(void) {
     return NULL;
 }
 
+void init_wrapper_path(struct environment *env, char * const configfile) {
+    char *sys_path = getenv("PATH");
+    char *config = configfile;
+    char *substr = strrchr(config, '/');
+    size_t cutoff = (size_t)(substr - config);
+    char *config_path = strndup(config, cutoff);
+    const char *const wrapper_paths =
+        "/usr/local/share/xdg-desktop-portal-termfilechooser:/usr/share/xdg-desktop-portal-termfilechooser";
+
+    size_t path_size = 0;
+    char *path_env = NULL;
+
+    path_size = snprintf(NULL, 0, "PATH=%s:%s:%s", config_path, wrapper_paths, sys_path);
+    path_env = malloc(path_size);
+    snprintf(path_env, path_size, "PATH=%s:%s:%s", config_path, wrapper_paths, sys_path);
+
+    parse_env(env, path_env);
+
+    free(path_env);
+    free(config_path);
+}
+
 void init_config(char ** const configfile, struct xdpw_config *config) {
     if (*configfile == NULL) {
         *configfile = get_config_path();
@@ -209,4 +231,5 @@ void init_config(char ** const configfile, struct xdpw_config *config) {
     if (ini_parse(*configfile, handle_ini_config, config) < 0) {
         logprint(ERROR, "config: unable to load config file %s", *configfile);
     }
+    init_wrapper_path(config->filechooser_conf.env, *configfile);
 }
