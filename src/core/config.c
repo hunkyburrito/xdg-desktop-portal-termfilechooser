@@ -14,6 +14,11 @@
 void print_config(enum LOGLEVEL loglevel, struct xdpw_config *config) {
     logprint(loglevel, "config: cmd:  %s", config->filechooser_conf.cmd);
     logprint(loglevel, "config: default_dir:  %s", config->filechooser_conf.default_dir);
+    for (int i = 0; i < config->filechooser_conf.env->num_vars; i++) {
+        logprint(loglevel, "config: env:  %s=%s",
+                 (config->filechooser_conf.env->vars + i)->name,
+                 (config->filechooser_conf.env->vars + i)->value);
+    }
 }
 
 // NOTE: calling finish_config won't prepare the config to be read again from config file
@@ -22,6 +27,12 @@ void finish_config(struct xdpw_config *config) {
     logprint(DEBUG, "config: destroying config");
     free(config->filechooser_conf.cmd);
     free(config->filechooser_conf.default_dir);
+    for (int i = 0; i < config->filechooser_conf.env->num_vars; i++) {
+        free((config->filechooser_conf.env->vars + i)->name);
+        free((config->filechooser_conf.env->vars + i)->value);
+    }
+    free(config->filechooser_conf.env->vars);
+    free(config->filechooser_conf.env);
 }
 
 static void parse_string(char **dest, const char* value) {
@@ -33,11 +44,48 @@ static void parse_string(char **dest, const char* value) {
     *dest = strdup(value);
 }
 
+static void parse_env(struct environment* env, const char* envstr) {
+    if (envstr == NULL || *envstr == '\0') {
+        logprint(TRACE, "config: skipping empty value in config file");
+        return;
+    }
+
+    char *sep = strchr(envstr, '=');
+    char *name = NULL;
+    char *value = NULL;
+
+    if (sep == NULL || sep == envstr) {
+        logprint(TRACE, "config: skipping corrupt env in config file");
+        return;
+    }
+    else {
+        name = strtok((char*)envstr, "=");
+        value = strtok(NULL, "\n");
+        if (value == NULL)
+            value = "";
+    }
+
+    // dynamically allocate more vars
+    if (env->num_vars == env->capacity){
+        env->capacity += 5;
+        env->vars = realloc(env->vars, sizeof(struct env_var) * env->capacity);
+    }
+
+    // create env_var and add to env
+    struct env_var *var = (env->vars + env->num_vars);
+    var->name = strdup(name);
+    var->value = strdup(value);
+
+    env->num_vars++;
+}
+
 static int handle_ini_filechooser(struct config_filechooser *filechooser_conf, const char *key, const char *value) {
     if (strcmp(key, "cmd") == 0) {
         parse_string(&filechooser_conf->cmd, value);
     } else if (strcmp(key, "default_dir") == 0) {
         parse_string(&filechooser_conf->default_dir, value);
+    } else if (strcmp(key, "env") == 0) {
+        parse_env(filechooser_conf->env, value);
     } else {
         logprint(TRACE, "config: skipping invalid key in config file");
         return 0;
@@ -64,6 +112,12 @@ static void default_config(struct xdpw_config *config) {
     size = snprintf(NULL, 0, "%s", FILECHOOSER_DEFAULT_DIR) + 1;
     config->filechooser_conf.default_dir = malloc(size);
     snprintf(config->filechooser_conf.default_dir, size, "%s", FILECHOOSER_DEFAULT_DIR);
+
+    struct environment *env = malloc(sizeof(struct environment));
+    env->num_vars = 0;
+    env->capacity = 10;
+    env->vars = malloc(sizeof(struct env_var) * env->capacity);
+    config->filechooser_conf.env = env;
 }
 
 static bool file_exists(const char *path) {
