@@ -1,4 +1,4 @@
 [filechooser]
-cmd=/usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
+cmd=yazi-wrapper.sh
 default_dir=$HOME/Downloads
-;env=
+;env=TERMCMD=foot

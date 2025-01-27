@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <ini.h>
 
-#define FILECHOOSER_DEFAULT_CMD "/usr/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh"
+#define FILECHOOSER_DEFAULT_CMD "/usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh"
 #define FILECHOOSER_DEFAULT_DIR "/tmp"
 
 void print_config(enum LOGLEVEL loglevel, struct xdpw_config *config) {
