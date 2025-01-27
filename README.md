@@ -66,22 +66,67 @@ On Debian, move the `termfilechooser.portal` file:
 By default, the contents of the `contrib` folder are placed in `/usr/local/share/xdg-desktop-portal-termfilechooser/`.
 Copy the `config` to `~/.config/xdg-desktop-portal-termfilechooser` and edit it to set your preferred wrapper and default directory.
 
-To set your terminal emulator, you can use the `TERMCMD` environment variable instead of editing the wrapper file directly. This environment variable can also be set in the `cmd` key in the `config` if so desired (this is shown in the 2nd example below).
-Example:
+The main options for customizing how the filepicker is launched (in recommended order) are:
 
--   `$HOME/.profile`
--   `.bashrc`
+- Editing the `env` key in the `config`
+- Prepending your environment variables in the `cmd` key in the `config`
+- Exporting a global `TERMCMD` environment variable
+- Creating/Editing your own wrapper file
+
+#### Example:
+
+##### Editing `env`:
+
+```conf
+### $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config ###
+
+[filechooser]
+cmd=/usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
+default_dir=$HOME/Downloads
+env=VARIABLE1=VALUE1
+    VARIABLE2=VALUE2
+```
+OR
+```conf
+### $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config ###
+
+[filechooser]
+cmd=/usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
+default_dir=$HOME/Downloads
+env=VARIABLE1=VALUE1
+env=VARIABLE2=VALUE2
+```
+
+Environment variables that unset values are also allowed. (e.g. `env=VARIABLE=`)
+
+##### Prepending variables:
+
+```conf
+### $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config ###
+
+[filechooser]
+cmd=TERMCMD='wezterm start --always-new-process' /usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
+default_dir=$HOME/Downloads
+```
+
+##### Exporting a global:
 
 ```sh
+### $HOME/.profile, .bashrc, or equivalent ###
+
 # use wezterm intead of kitty
 export TERMCMD="wezterm start --always-new-process"
 ```
 
--   `$HOME/.config/xdg-desktop-portal-termfilechooser/config`
+##### Copying wrapper:
+
+```cp /usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/custom-yazi-wrapper.sh```
 
 ```conf
+### $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config ###
+
 [filechooser]
-cmd=TERMCMD='wezterm start --always-new-process' /usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
+cmd=$XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/custom-yazi-wrapper.sh
 default_dir=$HOME/Downloads
 ```
 
