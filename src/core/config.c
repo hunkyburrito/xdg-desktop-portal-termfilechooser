@@ -76,8 +76,6 @@ static void parse_env(struct environment* env, char* envstr) {
     var->name = strdup(name);
     var->value = strdup(value);
     env->num_vars++;
-
-    free(envstr);
 }
 
 static int handle_ini_filechooser(struct config_filechooser *filechooser_conf, const char *key, const char *value) {
@@ -86,7 +84,9 @@ static int handle_ini_filechooser(struct config_filechooser *filechooser_conf, c
     } else if (strcmp(key, "default_dir") == 0) {
         parse_string(&filechooser_conf->default_dir, value);
     } else if (strcmp(key, "env") == 0) {
-        parse_env(filechooser_conf->env, strdup(value));
+        char *envstr = strdup(value);
+        parse_env(filechooser_conf->env, envstr);
+        free(envstr);
     } else {
         logprint(TRACE, "config: skipping invalid key in config file");
         return 0;
