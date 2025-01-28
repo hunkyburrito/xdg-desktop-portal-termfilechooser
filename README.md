@@ -112,7 +112,7 @@ Environment variables that unset values are also allowed. (e.g. `env=VARIABLE=`)
 ### $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config ###
 
 [filechooser]
-cmd=TERMCMD='wezterm start --always-new-process' yazi-wrapper.sh
+cmd=TERMCMD='foot' yazi-wrapper.sh
 default_dir=$HOME/Downloads
 ```
 
@@ -121,8 +121,8 @@ default_dir=$HOME/Downloads
 ```sh
 ### $HOME/.profile, .bashrc, or equivalent ###
 
-# use wezterm intead of kitty
-export TERMCMD="wezterm start --always-new-process"
+# use foot intead of kitty
+export TERMCMD="foot"
 ```
 
 ##### Copying wrapper:
