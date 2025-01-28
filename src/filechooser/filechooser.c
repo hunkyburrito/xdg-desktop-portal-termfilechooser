@@ -38,6 +38,8 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
   snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\'", cmd_script, multiple,
            directory, writing, path, PATH_PORTAL);
 
+  struct environment *env = state->config->filechooser_conf.env;
+
   // Check if the portal file exists and have read write permission
   if (access(PATH_PORTAL, F_OK) == 0) {
     if (access(PATH_PORTAL, R_OK | W_OK) != 0) {
@@ -49,6 +51,13 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     }
   }
   remove(PATH_PORTAL);
+  for (int i = 0, ret = 0; i < env->num_vars; i++) {
+    logprint(TRACE, "setting env: %s=%s", (env->vars + i)->name, (env->vars + i)->value);
+    ret = setenv((env->vars + i)->name, (env->vars + i)->value, 1);
+    if (ret) {
+      logprint(WARN, "could not set env %s: %d", (env->vars + i)->name, errno);
+    }
+  }
   logprint(TRACE, "executing command: %s", cmd);
   int ret = system(cmd);
   if (ret) {

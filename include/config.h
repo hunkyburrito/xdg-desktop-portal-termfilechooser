@@ -3,9 +3,21 @@
 
 #include "logger.h"
 
+struct env_var {
+    char *name;
+    char *value;
+};
+
+struct environment {
+    int num_vars;
+    int capacity;
+    struct env_var *vars;
+};
+
 struct config_filechooser {
     char *cmd;
     char *default_dir;
+    struct environment *env;
 };
 
 struct xdpw_config {
