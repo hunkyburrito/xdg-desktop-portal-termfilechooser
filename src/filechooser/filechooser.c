@@ -55,13 +55,13 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     logprint(TRACE, "setting env: %s=%s", (env->vars + i)->name, (env->vars + i)->value);
     ret = setenv((env->vars + i)->name, (env->vars + i)->value, 1);
     if (ret) {
-      logprint(WARN, "could not set env %s: %d", (env->vars + i)->name, errno);
+      logprint(WARN, "could not set env %s: %s", (env->vars + i)->name, strerror(errno));
     }
   }
   logprint(TRACE, "executing command: %s", cmd);
   int ret = system(cmd);
   if (ret) {
-    logprint(ERROR, "could not execute %s: %d", cmd, errno);
+    logprint(ERROR, "could not execute %s: %s", cmd, strerror(errno));
     free(cmd);
     return -1;
   }
