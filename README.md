@@ -57,7 +57,7 @@ On Alpine/postmarketOS, copy the configs to the right place:
     sudo cp ~/Downloads/xdg-desktop-portal-termfilechooser/contrib/yazi-wrapper.sh ~/.config/xdg-desktop-portal-termfilechooser/
     sudo cp ~/Downloads/xdg-desktop-portal-termfilechooser/termfilechooser.portal /usr/share/xdg-desktop-portal/portals/
 
-On Debian, move the `termfilechooser.portal` file:
+On Debian and Arch, move the `termfilechooser.portal` file:
 
     sudo mv /usr/local/share/xdg-desktop-portal/portals/termfilechooser.portal /usr/share/xdg-desktop-portal/portals/
 
