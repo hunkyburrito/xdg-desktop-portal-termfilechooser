@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 set -x
 
@@ -49,7 +49,7 @@ if [ -d "$last_selected" ]; then
         path="${last_selected}"
     fi
 fi
-if [[ -z "$path" ]]; then
+if [ -z "$path" ]; then
     path="$HOME"
 fi
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 set -x
 
@@ -51,7 +51,7 @@ if [ -d "$last_selected" ]; then
     fi
 fi
 
-if [[ -z "$path" ]]; then
+if [ -z "$path" ]; then
     path="$HOME"
 fi
 
@@ -79,9 +79,9 @@ else
     # Save the last selected path for the next time, only download file operation is need to use this path, \
     # the other three save last visited location automatically
     selected_path=$(head -n 1 <"$out")
-    if [[ -d "$selected_path" ]]; then
+    if [ -d "$selected_path" ]; then
         echo "$selected_path" >"$last_selected_path_cfg"
-    elif [[ -f "$selected_path" ]]; then
+    elif [ -f "$selected_path" ]; then
         dirname "$selected_path" >"$last_selected_path_cfg"
     fi
 fi

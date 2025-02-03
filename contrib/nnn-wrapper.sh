@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh bash
 
 set -x
 # This wrapper script is invoked by xdg-desktop-portal-termfilechooser.
@@ -27,7 +27,7 @@ cmd="nnn -S -s xdg-portal-filechooser"
 # Although perhaps it could be scripted together with https://github.com/jarun/nnn/wiki/Basic-use-cases#configure-cd-on-quit
 # This missing functionality probably could be implemented with a plugin.
 
-if [[ -z "$path" ]]; then
+if [ -z "$path" ]; then
     path="$HOME"
 fi
 
@@ -73,13 +73,13 @@ fi
 
 # data will be `cd "/dir/path"`
 NNN_TMPFILE_PATH="/tmp/xdg-desktop-portal-termfilechooser-NNN-tmpfile"
-if [[ "$directory" == "1" ]]; then
-    env NNN_TMPFILE="$NNN_TMPFILE_PATH" $termcmd -- $cmd "$@"
+if [ "$directory" -eq "1" ]; then
+    env NNN_TMPFILE="$NNN_TMPFILE_PATH" "$termcmd" -- "$cmd" "$@"
 else
-    $termcmd -- $cmd "$@"
+    "$termcmd" -- "$cmd" "$@"
 fi
 
-if [[ "$directory" == "1" ]] && [[ -n "$NNN_TMPFILE_PATH" ]]; then
+if [ "$directory" -eq "1" ] && [ -n "$NNN_TMPFILE_PATH" ]; then
     LAST_SELECTED_DIR=$(cat "$NNN_TMPFILE_PATH")
     # convert data from `cd "/dir/path"`  to "/dir/path"
     LAST_SELECTED_DIR=$(echo "$LAST_SELECTED_DIR" | sed -n "s/^cd '\(.*\)'/\1/p")
