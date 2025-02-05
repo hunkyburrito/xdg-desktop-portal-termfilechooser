@@ -79,7 +79,7 @@ Notes:
     set -- --chooser-file="$out" --cwd-file="$last_selected_path_cfg" "$path"
 elif [ "$directory" = "1" ]; then
     # upload files from a directory
-    set -- --cwd-file="$out" "$path"
+    set -- --chooser-file="$out" --cwd-file="$last_selected_path_cfg" "$path"
 elif [ "$multiple" = "1" ]; then
     # upload multiple files
     set -- --chooser-file="$out" --cwd-file="$last_selected_path_cfg" "$path"
