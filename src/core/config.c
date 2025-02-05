@@ -209,7 +209,7 @@ void init_wrapper_path(struct environment *env, char * const configfile) {
     size_t path_size = 0;
     char *path_env = NULL;
 
-    path_size = snprintf(NULL, 0, "PATH=%s:%s:%s", config_path, wrapper_paths, sys_path);
+    path_size = 1 + snprintf(NULL, 0, "PATH=%s:%s:%s", config_path, wrapper_paths, sys_path);
     path_env = malloc(path_size);
     snprintf(path_env, path_size, "PATH=%s:%s:%s", config_path, wrapper_paths, sys_path);
 
