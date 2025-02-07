@@ -29,7 +29,7 @@ path="$4"
 out="$5"
 cmd="vifm"
 # "wezterm start --always-new-process" if you use wezterm
-termcmd="${TERMCMD:-kitty}"
+termcmd="${TERMCMD:-kitty --title 'termfilechooser'}"
 # change this to "/tmp/xxxxxxx/last_selected" if you only want to save last selected location
 # in session (flushed after reset device)
 last_selected_path_cfg="${XDG_STATE_HOME:-$HOME/.local/state}/xdg-desktop-portal-termfilechooser/last_selected"

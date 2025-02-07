@@ -11,7 +11,7 @@ save="$3"
 path="$4"
 out="$5"
 # termcmd="x-terminal-emulator -e"
-termcmd="${TERMCMD:-kitty}"
+termcmd="${TERMCMD:-kitty --title 'termfilechooser'}"
 cmd="nnn -S -s xdg-portal-filechooser"
 # -S [-s <session_file_name>] saves the last visited dir location and opens it on next startup
 

@@ -25,7 +25,7 @@ save="$3"
 path="$4"
 out="$5"
 
-termcmd="${TERMCMD:-kitty}"
+termcmd="${TERMCMD:-kitty --title 'termfilechooser'}"
 
 if [ "$save" = "1" ]; then
     cmd="dialog --yesno \"Save to \"$path\"?\" 0 0 && ( printf '%s' \"$path\" > $out ) || ( printf '%s' 'Input path to write to: ' && read input && printf '%s' \"\$input\" > $out)"
