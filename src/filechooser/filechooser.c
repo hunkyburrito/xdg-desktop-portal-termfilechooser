@@ -32,8 +32,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
   }
 
   size_t str_size = snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\'", cmd_script,
-                             multiple, directory, writing, path, PATH_PORTAL) +
-                    1;
+                             multiple, directory, writing, path, PATH_PORTAL) + 1;
   char *cmd = malloc(str_size);
   snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\'", cmd_script, multiple,
            directory, writing, path, PATH_PORTAL);
@@ -342,10 +341,37 @@ static int method_save_file(sd_bus_message *msg, void *data,
     current_folder = default_dir;
   }
 
-  size_t path_size =
-      snprintf(NULL, 0, "%s/%s", current_folder, current_name) + 1;
+  size_t path_size = snprintf(NULL, 0, "%s/%s", current_folder, current_name) + 1;
   char *path = malloc(path_size);
   snprintf(path, path_size, "%s/%s", current_folder, current_name);
+
+  // escape ' with '\'' in path
+  char *tmp = path;
+  size_t escape_size = 0;
+  while (*tmp) {
+    escape_size += (*tmp == '\'') ? 4 : 1;
+    tmp++;
+  }
+
+  char* escaped_path = malloc(escape_size + 1);
+  char* ptr = escaped_path;
+  tmp = path;
+  while (*tmp) {
+    if (*tmp == '\'') {
+      *ptr++ = '\'';
+      *ptr++ = '\\';
+      *ptr++ = '\'';
+      *ptr++ = '\'';
+    }
+    else {
+      *ptr++ = *tmp;
+    }
+    tmp++;
+  }
+  *ptr = '\0';
+
+  free(path);
+  path = escaped_path;
 
   bool file_already_exists = true;
   while (file_already_exists) {
