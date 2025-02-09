@@ -167,7 +167,7 @@ Restart the portal service:
 
 ### Test
 
-    GTK_USE_PORTAL=1  zenity --file-selection
+    GDK_DEBUG=portals  zenity --file-selection
 
 and additional options: `--multiple`, `--directory`, `--save`.
 
