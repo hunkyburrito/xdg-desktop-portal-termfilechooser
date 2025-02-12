@@ -1,3 +1,4 @@
+# !!!Please read this thoroughly!!!
 # xdg-desktop-portal-termfilechooser
 
 <!--toc:start-->
