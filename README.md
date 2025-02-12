@@ -1,6 +1,6 @@
-# !!!Please read this thoroughly!!!
 # xdg-desktop-portal-termfilechooser
 
+# !!! Please read this thoroughly !!!
 <!--toc:start-->
 
 -   [xdg-desktop-portal-termfilechooser](#xdg-desktop-portal-termfilechooser)
@@ -85,13 +85,14 @@ The main options for customizing how the filepicker is launched (in recommended 
 
 ##### Editing `env`:
 
+Note: Setting environment variables in the config with `env` does not require you to quote the entire value. See example below.
 ```conf
 ### $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config ###
 
 [filechooser]
 cmd=yazi-wrapper.sh
 default_dir=$HOME/Downloads
-env=VARIABLE1=VALUE1
+env=TERMCMD=foot -T "terminal filechooser"
     VARIABLE2=VALUE2
 ```
 OR
@@ -101,7 +102,7 @@ OR
 [filechooser]
 cmd=yazi-wrapper.sh
 default_dir=$HOME/Downloads
-env=VARIABLE1=VALUE1
+env=TERMCMD=foot -T "terminal filechooser"
 env=VARIABLE2=VALUE2
 ```
 
@@ -109,26 +110,24 @@ Environment variables that unset values are also allowed. (e.g. `env=VARIABLE=`)
 
 ##### Prepending variables:
 
+Note: Setting environment variables by prepending requires proper quoting and necessary escaping. See example below.
 ```conf
 ### $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config ###
 
 [filechooser]
-cmd=TERMCMD='foot' yazi-wrapper.sh
+cmd=TERMCMD='foot -T "terminal filechooser"' yazi-wrapper.sh
 default_dir=$HOME/Downloads
 ```
 
-When setting the name or app-id/class of the TERMCMD use single qoutes instead of double qoutes to make it work with the wrapper script!
-
 ##### Exporting a global:
 
+Note: Setting `TERMCMD` globally requires proper quoting and necessary escaping. See example below.
 ```sh
 ### $HOME/.profile, .bashrc, or equivalent ###
 
 # use foot intead of kitty
-export TERMCMD="foot"
+export TERMCMD='foot -T "terminal filechooser"'
 ```
-
-Same rule as in [##### Prepending variables:](https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser?tab=readme-ov-file#prepending-variables)
 
 ##### Copying wrapper:
 
