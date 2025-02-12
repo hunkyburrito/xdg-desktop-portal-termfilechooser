@@ -76,7 +76,7 @@ NNN_TMPFILE_PATH="/tmp/xdg-desktop-portal-termfilechooser-NNN-tmpfile"
 if [ "$directory" -eq "1" ]; then
     env NNN_TMPFILE="$NNN_TMPFILE_PATH" "$termcmd" -- "$cmd" "$@"
 else
-    "$termcmd" -- "$cmd" "$@"
+    sh -c "$termcmd -- $cmd $*"
 fi
 
 if [ "$directory" -eq "1" ] && [ -n "$NNN_TMPFILE_PATH" ]; then

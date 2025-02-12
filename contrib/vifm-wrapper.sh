@@ -70,7 +70,7 @@ else
     # upload only 1 file
 	set -- --choose-files "$out" -c "only" -c "map <esc> :cquit<cr>" -c "set statusline='Select file (open file to select it, press <Esc> to cancel)'"
 fi
-$termcmd -- $cmd "$@"
+sh -c "$termcmd -- $cmd $*"
 
 # Remove file if the save operation aborted
 if [ "$save" = "1" ] && [ ! -s "$out" ]; then

@@ -58,7 +58,7 @@ elif [ "$multiple" = "1" ]; then
 else
 	set -- -selection-path "$out" "$default_dir"
 fi
-$termcmd $cmd "$@"
+sh -c "$termcmd $cmd $*"
 if [ "$save" = "1" ] && [ ! -s "$out" ]; then
 	rm "$path"
 fi

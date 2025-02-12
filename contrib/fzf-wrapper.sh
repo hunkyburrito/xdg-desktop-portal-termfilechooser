@@ -37,4 +37,4 @@ else
     cmd="fd -a --base-directory=$HOME | fzf +m --prompt 'Select file > ' > $out"
 fi
 
-"$termcmd" sh -c "$cmd"
+sh -c "$termcmd -- sh -c \"$cmd\""

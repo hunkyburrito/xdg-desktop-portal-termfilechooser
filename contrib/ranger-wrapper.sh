@@ -88,7 +88,7 @@ else
     # upload only 1 file
     set -- --choosefile="$out" --cmd="echo Select file (open file to select it)" "$path"
 fi
-$termcmd -- $cmd "$@"
+sh -c "$termcmd -- $cmd $*"
 
 # Remove file if the save operation aborted
 if [ "$save" = "1" ] && [ ! -s "$out" ]; then
