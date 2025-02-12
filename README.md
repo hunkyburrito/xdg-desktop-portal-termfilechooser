@@ -116,7 +116,7 @@ cmd=TERMCMD='foot' yazi-wrapper.sh
 default_dir=$HOME/Downloads
 ```
 
-When setting the name of the TERMCMD use single qoutes instead of double qoutes to make it work with the wrapper script!
+When setting the name or app-id/class of the TERMCMD use single qoutes instead of double qoutes to make it work with the wrapper script!
 
 ##### Exporting a global:
 
