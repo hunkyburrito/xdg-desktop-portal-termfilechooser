@@ -88,7 +88,14 @@ else
     set -- --chooser-file="$out" --cwd-file="$last_selected_path_cfg" "$path"
 fi
 
-sh -c "$termcmd -- $cmd $*"
+command="$termcmd -- $cmd"
+for arg in "$@"; do
+    # escape double quotes
+    escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
+    # escape spaces
+    command="$command \"$escaped\""
+done
+sh -c "$command"
 
 # Save the last selected path for the next time, only upload files from a directory operation is need
 # because `--cwd-file` will do the same thing for files(s) upload and download operations

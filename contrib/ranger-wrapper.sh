@@ -88,7 +88,15 @@ else
     # upload only 1 file
     set -- --choosefile="$out" --cmd="echo Select file (open file to select it)" "$path"
 fi
-sh -c "$termcmd -- $cmd $*"
+
+command="$termcmd -- $cmd"
+for arg in "$@"; do
+    # escape double quotes
+    escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
+    # escape spaces
+    command="$command \"$escaped\""
+done
+sh -c "$command"
 
 # Remove file if the save operation aborted
 if [ "$save" = "1" ] && [ ! -s "$out" ]; then

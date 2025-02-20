@@ -29,7 +29,6 @@ out="$5"
 cmd="lf"
 termcmd="${TERMCMD:-kitty --title 'termfilechooser'}"
 if [ "$save" = "1" ]; then
-	# touch $path
 	set -- -selection-path "$out" "$path"
 	printf '%s' 'xdg-desktop-portal-termfilechooser saving files tutorial
 
@@ -58,7 +57,17 @@ elif [ "$multiple" = "1" ]; then
 else
 	set -- -selection-path "$out" "$default_dir"
 fi
-sh -c "$termcmd $cmd $*"
+
+command="$termcmd -- $cmd"
+for arg in "$@"; do
+    # escape double quotes
+    escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
+    # escape spaces
+    command="$command \"$escaped\""
+done
+
+sh -c "$command"
+
 if [ "$save" = "1" ] && [ ! -s "$out" ]; then
 	rm "$path"
 fi

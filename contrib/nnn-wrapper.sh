@@ -71,12 +71,20 @@ else
     set -- -p "$out"
 fi
 
+command="$termcmd -- $cmd"
+for arg in "$@"; do
+    # escape double quotes
+    escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
+    # escape spaces
+    command="$command \"$escaped\""
+done
+
 # data will be `cd "/dir/path"`
 NNN_TMPFILE_PATH="/tmp/xdg-desktop-portal-termfilechooser-NNN-tmpfile"
 if [ "$directory" -eq "1" ]; then
-    env NNN_TMPFILE="$NNN_TMPFILE_PATH" "$termcmd" -- "$cmd" "$@"
+    sh -c "env NNN_TMPFILE=\"$NNN_TMPFILE_PATH\" $command"
 else
-    sh -c "$termcmd -- $cmd $*"
+    sh -c "$command"
 fi
 
 if [ "$directory" -eq "1" ] && [ -n "$NNN_TMPFILE_PATH" ]; then
