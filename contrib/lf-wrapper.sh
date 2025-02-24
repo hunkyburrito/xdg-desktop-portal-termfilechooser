@@ -58,7 +58,7 @@ else
 	set -- -selection-path "$out" "$default_dir"
 fi
 
-command="$termcmd -- $cmd"
+command="$termcmd $cmd"
 for arg in "$@"; do
     # escape double quotes
     escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')

@@ -89,7 +89,7 @@ else
     set -- --choosefile="$out" --cmd="echo Select file (open file to select it)" "$path"
 fi
 
-command="$termcmd -- $cmd"
+command="$termcmd $cmd"
 for arg in "$@"; do
     # escape double quotes
     escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')

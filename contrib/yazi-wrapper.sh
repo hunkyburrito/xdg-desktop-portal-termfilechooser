@@ -88,7 +88,7 @@ else
     set -- --chooser-file="$out" --cwd-file="$last_selected_path_cfg" "$path"
 fi
 
-command="$termcmd -- $cmd"
+command="$termcmd $cmd"
 for arg in "$@"; do
     # escape double quotes
     escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
