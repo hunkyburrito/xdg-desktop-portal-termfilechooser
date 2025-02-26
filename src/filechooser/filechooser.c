@@ -268,6 +268,7 @@ cleanup:
   }
   free(selected_files);
 
+  xdpw_request_destroy(req);
   return ret;
 }
 
@@ -468,6 +469,7 @@ cleanup:
   free(selected_files);
   free(path);
 
+  xdpw_request_destroy(req);
   return ret;
 }
 
