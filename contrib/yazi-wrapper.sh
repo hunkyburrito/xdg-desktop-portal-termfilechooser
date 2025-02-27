@@ -97,12 +97,6 @@ for arg in "$@"; do
 done
 sh -c "$command"
 
-# Save the last selected path for the next time, only upload files from a directory operation is need
-# because `--cwd-file` will do the same thing for files(s) upload and download operations
-if [ "$save" = "0" ] && [ "$directory" = "1" ]; then
-    echo "$(head -n 1 <"$out")" >"$last_selected_path_cfg"
-fi
-
 # Remove file if the save operation aborted
 if [ "$save" = "1" ] && [ ! -s "$out" ]; then
     rm "$path"
