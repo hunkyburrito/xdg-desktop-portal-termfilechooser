@@ -8,11 +8,12 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #define PATH_PREFIX "file://"
-#define PATH_PORTAL "/tmp/termfilechooser.portal"
+#define PATH_PORTAL_BASE "/tmp/termfilechooser"
 
 static const char object_path[] = "/org/freedesktop/portal/desktop";
 static const char interface_name[] = "org.freedesktop.impl.portal.FileChooser";
@@ -31,25 +32,34 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     path = "";
   }
 
+  uid_t uid = getuid();
+  size_t filename_size = snprintf(NULL, 0, "%s-%u.portal", PATH_PORTAL_BASE, uid);
+  char *filename = malloc(filename_size);
+  snprintf(filename, filename_size, "%s-%u.portal", PATH_PORTAL_BASE, uid);
+
   size_t str_size = snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\'", cmd_script,
-                             multiple, directory, writing, path, PATH_PORTAL) + 1;
+                             multiple, directory, writing, path, filename) + 1;
   char *cmd = malloc(str_size);
   snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\'", cmd_script, multiple,
-           directory, writing, path, PATH_PORTAL);
+           directory, writing, path, filename);
 
   struct environment *env = state->config->filechooser_conf.env;
 
-  // Check if the portal file exists and have read write permission
-  if (access(PATH_PORTAL, F_OK) == 0) {
-    if (access(PATH_PORTAL, R_OK | W_OK) != 0) {
-      logprint(ERROR,
-               "failed to start portal, make sure you have permission to read "
-               "and write %s",
-               PATH_PORTAL);
+  if (access(filename, F_OK) == 0) {
+    // clear contents
+    FILE *fp = fopen(filename, "w");
+    if (fp == NULL) {
+      logprint(ERROR, "Failed to open '%s' in write mode for clearing.");
+      free(filename);
+      return -1;
+    }
+    if (fclose(fp) != 0){
+      logprint(ERROR, "Failed to close '%s' after clearing.");
+      free(filename);
       return -1;
     }
   }
-  remove(PATH_PORTAL);
+
   for (int i = 0, ret = 0; i < env->num_vars; i++) {
     logprint(TRACE, "setting env: %s=%s", (env->vars + i)->name, (env->vars + i)->value);
     ret = setenv((env->vars + i)->name, (env->vars + i)->value, 1);
@@ -66,9 +76,10 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
   }
   free(cmd);
 
-  FILE *fp = fopen(PATH_PORTAL, "r");
+  FILE *fp = fopen(filename, "r");
   if (fp == NULL) {
-    logprint(ERROR, "failed to open " PATH_PORTAL);
+    logprint(ERROR, "Failed to open '%s' in read mode.", filename);
+    free(filename);
     return -1;
   }
 
@@ -127,6 +138,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
   (*selected_files)[num_lines] = NULL;
 
   fclose(fp);
+  free(filename);
   return 0;
 }
 
