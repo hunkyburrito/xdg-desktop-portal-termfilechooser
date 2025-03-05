@@ -33,7 +33,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
   }
 
   uid_t uid = getuid();
-  size_t filename_size = snprintf(NULL, 0, "%s-%u.portal", PATH_PORTAL_BASE, uid);
+  size_t filename_size = snprintf(NULL, 0, "%s-%u.portal", PATH_PORTAL_BASE, uid) + 1;
   char *filename = malloc(filename_size);
   snprintf(filename, filename_size, "%s-%u.portal", PATH_PORTAL_BASE, uid);
 
