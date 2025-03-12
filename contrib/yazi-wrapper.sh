@@ -32,12 +32,12 @@ cmd="yazi"
 termcmd="${TERMCMD:-kitty --title 'termfilechooser'}"
 # change this to "/tmp/xxxxxxx/.last_selected" if you only want to save last selected location
 # in session (flushed after reset device)
-last_selected_path_cfg="${XDG_STATE_HOME:-$HOME/.local/state}/xdg-desktop-portal-termfilechooser/last_selected"
-mkdir -p "$(dirname "$last_selected_path_cfg")"
-if [ ! -f "$last_selected_path_cfg" ]; then
-    touch "$last_selected_path_cfg"
+last_selected_path="${XDG_STATE_HOME:-$HOME/.local/state}/xdg-desktop-portal-termfilechooser/last_selected"
+mkdir -p "$(dirname "$last_selected_path")"
+if [ ! -f "$last_selected_path" ]; then
+    touch "$last_selected_path"
 fi
-last_selected="$(cat "$last_selected_path_cfg")"
+last_selected="$(cat "$last_selected_path")"
 
 # Restore last selected path
 if [ -d "$last_selected" ]; then
@@ -49,6 +49,7 @@ if [ -d "$last_selected" ]; then
         path="${last_selected}"
     fi
 fi
+
 if [ -z "$path" ]; then
     path="$HOME"
 fi
@@ -76,16 +77,16 @@ Notes:
 2) If you quit yazi without opening a file, this file
    will be removed and the save operation aborted.
 ' >"$path"
-    set -- --chooser-file="$out" --cwd-file="$last_selected_path_cfg" "$path"
+    set -- --chooser-file="$out" --cwd-file="$last_selected_path" "$path"
 elif [ "$directory" = "1" ]; then
     # upload files from a directory
-    set -- --chooser-file="$out" --cwd-file="$last_selected_path_cfg" "$path"
+    set -- --chooser-file="$out" --cwd-file="$out" "$path"
 elif [ "$multiple" = "1" ]; then
     # upload multiple files
-    set -- --chooser-file="$out" --cwd-file="$last_selected_path_cfg" "$path"
+    set -- --chooser-file="$out" --cwd-file="$last_selected_path" "$path"
 else
     # upload only 1 file
-    set -- --chooser-file="$out" --cwd-file="$last_selected_path_cfg" "$path"
+    set -- --chooser-file="$out" --cwd-file="$last_selected_path" "$path"
 fi
 
 command="$termcmd $cmd"
@@ -96,6 +97,11 @@ for arg in "$@"; do
     command="$command \"$escaped\""
 done
 sh -c "$command"
+
+# save last_selected_path when selected by quit
+if [ "$save" = "0" ] && [ "$directory" = "1" ] && [ -s "$out" ]; then
+    dirname "$(tail -n 1 "$out")" > "$last_selected_path"
+fi
 
 # Remove file if the save operation aborted
 if [ "$save" = "1" ] && [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then

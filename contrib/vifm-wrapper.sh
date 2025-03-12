@@ -32,12 +32,12 @@ cmd="vifm"
 termcmd="${TERMCMD:-kitty --title 'termfilechooser'}"
 # change this to "/tmp/xxxxxxx/last_selected" if you only want to save last selected location
 # in session (flushed after reset device)
-last_selected_path_cfg="${XDG_STATE_HOME:-$HOME/.local/state}/xdg-desktop-portal-termfilechooser/last_selected"
-mkdir -p "$(dirname "$last_selected_path_cfg")"
-if [ ! -f "$last_selected_path_cfg" ]; then
-    touch "$last_selected_path_cfg"
+last_selected_path="${XDG_STATE_HOME:-$HOME/.local/state}/xdg-desktop-portal-termfilechooser/last_selected"
+mkdir -p "$(dirname "$last_selected_path")"
+if [ ! -f "$last_selected_path" ]; then
+    touch "$last_selected_path"
 fi
-last_selected="$(cat "$last_selected_path_cfg")"
+last_selected="$(cat "$last_selected_path")"
 
 Restore last selected path
 if [ -d "$last_selected" ]; then
@@ -86,10 +86,10 @@ if [ "$save" = "1" ] && [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
 else
     # Save the last selected path for the next time, only download file operation is need to use this path, \
     # the other three save last visited location automatically
-    selected_path=$(head -n 1 <"$out")
+    selected_path=$(tail -n 1 <"$out")
     if [ -d "$selected_path" ]; then
-        echo "$selected_path" >"$last_selected_path_cfg"
+        echo "$selected_path" >"$last_selected_path"
     elif [ -f "$selected_path" ]; then
-        dirname "$selected_path" >"$last_selected_path_cfg"
+        dirname "$selected_path" >"$last_selected_path"
     fi
 fi
