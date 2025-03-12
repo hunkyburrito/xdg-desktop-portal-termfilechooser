@@ -100,8 +100,10 @@ if [ "$save" = "0" ] && [ "$directory" = "1" ] && [ -s "$out" ]; then
 fi
 
 # Remove the file with the above tutorial text if the calling program did not overwrite it.
-if [ "$save" = "1" ] && [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
-    rm "$path"
+if [ "$save" = "1" ]; then
+    if [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
+        rm "$path"
+    fi
 else
     selected_path="$(tail -n 1 "$out")"
     if [ "$NNN_QUIT" = "1" ]; then

@@ -78,6 +78,8 @@ done
 
 sh -c "$command"
 
-if [ "$save" = "1" ] && [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
-	rm "$path"
+if [ "$save" = "1" ]; then
+    if [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
+        rm "$path"
+    fi
 fi

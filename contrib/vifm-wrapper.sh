@@ -81,8 +81,10 @@ done
 sh -c "$command"
 
 # Remove file if the save operation aborted
-if [ "$save" = "1" ] && [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
-    rm "$path"
+if [ "$save" = "1" ]; then
+    if [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
+        rm "$path"
+    fi
 else
     # Save the last selected path for the next time, only download file operation is need to use this path, \
     # the other three save last visited location automatically

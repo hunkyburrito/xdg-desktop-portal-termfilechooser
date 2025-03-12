@@ -104,6 +104,8 @@ if [ "$save" = "0" ] && [ "$directory" = "1" ] && [ -s "$out" ]; then
 fi
 
 # Remove file if the save operation aborted
-if [ "$save" = "1" ] && [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
-    rm "$path"
+if [ "$save" = "1" ]; then
+    if [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
+        rm "$path"
+    fi
 fi
