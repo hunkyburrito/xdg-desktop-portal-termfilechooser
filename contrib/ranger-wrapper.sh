@@ -99,7 +99,7 @@ done
 sh -c "$command"
 
 # Remove file if the save operation aborted
-if [ "$save" = "1" ] && [ ! -s "$out" ]; then
+if [ "$save" = "1" ] && [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
     rm "$path"
 else
     # Save the last selected path for the next time, only upload files from a directory operation is need

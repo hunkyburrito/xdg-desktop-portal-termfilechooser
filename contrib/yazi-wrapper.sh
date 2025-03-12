@@ -98,6 +98,6 @@ done
 sh -c "$command"
 
 # Remove file if the save operation aborted
-if [ "$save" = "1" ] && [ ! -s "$out" ]; then
+if [ "$save" = "1" ] && [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
     rm "$path"
 fi
