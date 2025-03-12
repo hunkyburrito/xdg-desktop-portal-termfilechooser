@@ -19,6 +19,16 @@
 # one path per line.
 # If nothing is printed, then the operation is assumed to have been canceled.
 
+################################################################################
+# At the time of writing, there is currently no good way to select directories.
+# There are two methods:
+#   1. Select directory and :open any file
+#   2. Create a keybinding like:
+#       map Q :{{
+#           $echo "$fs" > "/tmp/termfilechooser-$(id -u).portal"
+#           quit
+#       }}
+
 # Set default folder when download.
 default_dir="$HOME"
 multiple="$1"
@@ -35,7 +45,7 @@ if [ "$save" = "1" ]; then
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!                 === WARNING! ===                 !!!
 !!! The contents of *whatever* file you open last in !!!
-!!! ranger will be *overwritten*!                    !!!
+!!! lf will be *overwritten*!                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 Instructions:
@@ -47,7 +57,7 @@ Notes:
 1) This file is provided for your convenience. You
    could delete it and choose another file to overwrite
    that, for example.
-2) If you quit ranger without opening a file, this file
+2) If you quit lf without opening a file, this file
    will be removed and the save operation aborted.
 ' >"$path"
 elif [ "$directory" = "1" ]; then
