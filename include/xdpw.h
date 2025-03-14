@@ -40,11 +40,13 @@ int xdpw_filechooser_init(struct xdpw_state *state);
 struct xdpw_request *xdpw_request_create(sd_bus *bus, const char *object_path);
 void xdpw_request_destroy(struct xdpw_request *req);
 
-struct xdpw_session *xdpw_session_create(struct xdpw_state *state, sd_bus *bus, char *object_path);
+struct xdpw_session *xdpw_session_create(struct xdpw_state *state, sd_bus *bus,
+                                         char *object_path);
 void xdpw_session_destroy(struct xdpw_session *req);
 
-struct xdpw_timer *xdpw_add_timer(struct xdpw_state *state,
-        uint64_t delay_ns, xdpw_event_loop_timer_func_t func, void *data);
+struct xdpw_timer *xdpw_add_timer(struct xdpw_state *state, uint64_t delay_ns,
+                                  xdpw_event_loop_timer_func_t func,
+                                  void *data);
 
 void xdpw_destroy_timer(struct xdpw_timer *timer);
 

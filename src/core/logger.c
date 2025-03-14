@@ -1,5 +1,4 @@
 #include "logger.h"
-
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,12 +6,14 @@
 
 static struct logger_properties logprops;
 
-void init_logger(FILE *dst, enum LOGLEVEL level) {
+void init_logger(FILE *dst, enum LOGLEVEL level)
+{
     logprops.dst = dst;
     logprops.level = level;
 }
 
-enum LOGLEVEL get_loglevel(const char *level) {
+enum LOGLEVEL get_loglevel(const char *level)
+{
     if (strcmp(level, "QUIET") == 0) {
         return QUIET;
     } else if (strcmp(level, "ERROR") == 0) {
@@ -31,7 +32,8 @@ enum LOGLEVEL get_loglevel(const char *level) {
     exit(1);
 }
 
-static const char *print_loglevel(enum LOGLEVEL loglevel) {
+static const char *print_loglevel(enum LOGLEVEL loglevel)
+{
     switch (loglevel) {
         case QUIET:
             return "QUIET";
@@ -50,7 +52,8 @@ static const char *print_loglevel(enum LOGLEVEL loglevel) {
     abort();
 }
 
-void logprint(enum LOGLEVEL level, char *msg, ...) {
+void logprint(enum LOGLEVEL level, char *msg, ...)
+{
     if (!logprops.dst) {
         fprintf(stderr, "Logger has been called, but was not initialized\n");
         abort();
@@ -78,7 +81,6 @@ void logprint(enum LOGLEVEL level, char *msg, ...) {
     va_start(args, msg);
     vfprintf(logprops.dst, msg, args);
     va_end(args);
-
 
     fprintf(logprops.dst, "\n");
     fflush(logprops.dst);

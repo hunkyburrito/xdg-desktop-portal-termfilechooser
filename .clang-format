@@ -1,0 +1,8 @@
+---
+BasedOnStyle: llvm
+IndentWidth: 4
+UseTab: Never
+BreakBeforeBraces: Linux
+AllowShortIfStatementsOnASingleLine: false
+IndentCaseLabels: true
+---

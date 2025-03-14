@@ -1,19 +1,21 @@
 #include "config.h"
 #include "logger.h"
-
+#include <ini.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <ini.h>
 
-#define FILECHOOSER_DEFAULT_CMD "/usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh"
+#define FILECHOOSER_DEFAULT_CMD                                                \
+    "/usr/local/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh"
 #define FILECHOOSER_DEFAULT_DIR "/tmp"
 
-void print_config(enum LOGLEVEL loglevel, struct xdpw_config *config) {
+void print_config(enum LOGLEVEL loglevel, struct xdpw_config *config)
+{
     logprint(loglevel, "config: cmd:  %s", config->filechooser_conf.cmd);
-    logprint(loglevel, "config: default_dir:  %s", config->filechooser_conf.default_dir);
+    logprint(loglevel, "config: default_dir:  %s",
+             config->filechooser_conf.default_dir);
     for (int i = 0; i < config->filechooser_conf.env->num_vars; i++) {
         logprint(loglevel, "config: env:  %s=%s",
                  (config->filechooser_conf.env->vars + i)->name,
@@ -21,9 +23,11 @@ void print_config(enum LOGLEVEL loglevel, struct xdpw_config *config) {
     }
 }
 
-// NOTE: calling finish_config won't prepare the config to be read again from config file
-// with init_config since to pointers and other values won't be reset to NULL, or 0
-void finish_config(struct xdpw_config *config) {
+// NOTE: calling finish_config won't prepare the config to be read again from
+// config file with init_config since to pointers and other values won't be
+// reset to NULL, or 0
+void finish_config(struct xdpw_config *config)
+{
     logprint(DEBUG, "config: destroying config");
     free(config->filechooser_conf.cmd);
     free(config->filechooser_conf.default_dir);
@@ -35,7 +39,8 @@ void finish_config(struct xdpw_config *config) {
     free(config->filechooser_conf.env);
 }
 
-static void parse_string(char **dest, const char* value) {
+static void parse_string(char **dest, const char *value)
+{
     if (value == NULL || *value == '\0') {
         logprint(TRACE, "config: skipping empty value in config file");
         return;
@@ -44,7 +49,8 @@ static void parse_string(char **dest, const char* value) {
     *dest = strdup(value);
 }
 
-static void parse_env(struct environment* env, char* envstr) {
+static void parse_env(struct environment *env, char *envstr)
+{
     if (envstr == NULL || *envstr == '\0') {
         logprint(TRACE, "config: skipping env in config file");
         return;
@@ -57,8 +63,7 @@ static void parse_env(struct environment* env, char* envstr) {
     if (sep == NULL || sep == envstr) {
         logprint(TRACE, "config: skipping corrupt env in config file");
         return;
-    }
-    else {
+    } else {
         name = strtok(envstr, "=");
         value = strtok(NULL, "\n");
         if (value == NULL)
@@ -66,7 +71,7 @@ static void parse_env(struct environment* env, char* envstr) {
     }
 
     // dynamically allocate more vars
-    if (env->num_vars == env->capacity){
+    if (env->num_vars == env->capacity) {
         env->capacity += 5;
         env->vars = realloc(env->vars, sizeof(struct env_var) * env->capacity);
     }
@@ -78,7 +83,9 @@ static void parse_env(struct environment* env, char* envstr) {
     env->num_vars++;
 }
 
-static int handle_ini_filechooser(struct config_filechooser *filechooser_conf, const char *key, const char *value) {
+static int handle_ini_filechooser(struct config_filechooser *filechooser_conf,
+                                  const char *key, const char *value)
+{
     if (strcmp(key, "cmd") == 0) {
         parse_string(&filechooser_conf->cmd, value);
     } else if (strcmp(key, "default_dir") == 0) {
@@ -94,9 +101,12 @@ static int handle_ini_filechooser(struct config_filechooser *filechooser_conf, c
     return 1;
 }
 
-static int handle_ini_config(void *data, const char* section, const char *key, const char *value) {
-    struct xdpw_config *config = (struct xdpw_config*)data;
-    logprint(TRACE, "config: parsing section %s, key %s, value %s", section, key, value);
+static int handle_ini_config(void *data, const char *section, const char *key,
+                             const char *value)
+{
+    struct xdpw_config *config = (struct xdpw_config *)data;
+    logprint(TRACE, "config: parsing section %s, key %s, value %s", section,
+             key, value);
 
     if (strcmp(section, "filechooser") == 0) {
         return handle_ini_filechooser(&config->filechooser_conf, key, value);
@@ -106,13 +116,15 @@ static int handle_ini_config(void *data, const char* section, const char *key, c
     return 0;
 }
 
-static void default_config(struct xdpw_config *config) {
+static void default_config(struct xdpw_config *config)
+{
     size_t size = snprintf(NULL, 0, "%s", FILECHOOSER_DEFAULT_CMD) + 1;
     config->filechooser_conf.cmd = malloc(size);
     snprintf(config->filechooser_conf.cmd, size, "%s", FILECHOOSER_DEFAULT_CMD);
     size = snprintf(NULL, 0, "%s", FILECHOOSER_DEFAULT_DIR) + 1;
     config->filechooser_conf.default_dir = malloc(size);
-    snprintf(config->filechooser_conf.default_dir, size, "%s", FILECHOOSER_DEFAULT_DIR);
+    snprintf(config->filechooser_conf.default_dir, size, "%s",
+             FILECHOOSER_DEFAULT_DIR);
 
     struct environment *env = malloc(sizeof(struct environment));
     env->num_vars = 0;
@@ -121,11 +133,13 @@ static void default_config(struct xdpw_config *config) {
     config->filechooser_conf.env = env;
 }
 
-static bool file_exists(const char *path) {
+static bool file_exists(const char *path)
+{
     return path && access(path, R_OK) != -1;
 }
 
-static char *config_path(const char *prefix, const char *filename) {
+static char *config_path(const char *prefix, const char *filename)
+{
     if (!prefix || !prefix[0] || !filename || !filename[0]) {
         return NULL;
     }
@@ -138,7 +152,8 @@ static char *config_path(const char *prefix, const char *filename) {
     return path;
 }
 
-static char *get_config_path(void) {
+static char *get_config_path(void)
+{
     const char *home = getenv("HOME");
     char *config_home_fallback = NULL;
     if (home != NULL && home[0] != '\0') {
@@ -197,21 +212,25 @@ static char *get_config_path(void) {
     return NULL;
 }
 
-void init_wrapper_path(struct environment *env, char * const configfile) {
+void init_wrapper_path(struct environment *env, char *const configfile)
+{
     char *sys_path = getenv("PATH");
     char *config = configfile;
     char *substr = strrchr(config, '/');
     size_t cutoff = (size_t)(substr - config);
     char *config_path = strndup(config, cutoff);
     const char *const wrapper_paths =
-        "/usr/local/share/xdg-desktop-portal-termfilechooser:/usr/share/xdg-desktop-portal-termfilechooser";
+        "/usr/local/share/xdg-desktop-portal-termfilechooser:/usr/share/"
+        "xdg-desktop-portal-termfilechooser";
 
     size_t path_size = 0;
     char *path_env = NULL;
 
-    path_size = 1 + snprintf(NULL, 0, "PATH=%s:%s:%s", config_path, wrapper_paths, sys_path);
+    path_size = 1 + snprintf(NULL, 0, "PATH=%s:%s:%s", config_path,
+                             wrapper_paths, sys_path);
     path_env = malloc(path_size);
-    snprintf(path_env, path_size, "PATH=%s:%s:%s", config_path, wrapper_paths, sys_path);
+    snprintf(path_env, path_size, "PATH=%s:%s:%s", config_path, wrapper_paths,
+             sys_path);
 
     parse_env(env, path_env);
 
@@ -219,7 +238,8 @@ void init_wrapper_path(struct environment *env, char * const configfile) {
     free(config_path);
 }
 
-void init_config(char ** const configfile, struct xdpw_config *config) {
+void init_config(char **const configfile, struct xdpw_config *config)
+{
     if (*configfile == NULL) {
         *configfile = get_config_path();
     }

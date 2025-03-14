@@ -1,13 +1,14 @@
+#include "logger.h"
+#include "xdpw.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include "xdpw.h"
-#include "logger.h"
 
 static const char interface_name[] = "org.freedesktop.impl.portal.Request";
 
 static int method_close(sd_bus_message *msg, void *data,
-        sd_bus_error *ret_error) {
+                        sd_bus_error *ret_error)
+{
     struct xdpw_request *req = data;
     int ret = 0;
     logprint(INFO, "dbus: request closed");
@@ -33,24 +34,25 @@ static int method_close(sd_bus_message *msg, void *data,
 static const sd_bus_vtable request_vtable[] = {
     SD_BUS_VTABLE_START(0),
     SD_BUS_METHOD("Close", "", "", method_close, SD_BUS_VTABLE_UNPRIVILEGED),
-    SD_BUS_VTABLE_END
-};
+    SD_BUS_VTABLE_END};
 
-struct xdpw_request *xdpw_request_create(sd_bus *bus, const char *object_path) {
+struct xdpw_request *xdpw_request_create(sd_bus *bus, const char *object_path)
+{
     struct xdpw_request *req = calloc(1, sizeof(struct xdpw_request));
 
     if (sd_bus_add_object_vtable(bus, &req->slot, object_path, interface_name,
-                request_vtable, NULL) < 0) {
+                                 request_vtable, NULL) < 0) {
         free(req);
         logprint(ERROR, "dbus: sd_bus_add_object_vtable failed: %s",
-                strerror(-errno));
+                 strerror(-errno));
         return NULL;
     }
 
     return req;
 }
 
-void xdpw_request_destroy(struct xdpw_request *req) {
+void xdpw_request_destroy(struct xdpw_request *req)
+{
     if (req == NULL) {
         return;
     }
