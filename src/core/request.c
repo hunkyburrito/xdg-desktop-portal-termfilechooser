@@ -40,8 +40,10 @@ struct xdpw_request *xdpw_request_create(sd_bus *bus, const char *object_path)
 {
     struct xdpw_request *req = calloc(1, sizeof(struct xdpw_request));
 
-    if (sd_bus_add_object_vtable(bus, &req->slot, object_path, interface_name,
-                                 request_vtable, NULL) < 0) {
+    int ret;
+    ret = sd_bus_add_object_vtable(bus, &req->slot, object_path, interface_name,
+                                   request_vtable, NULL);
+    if (ret < 0) {
         free(req);
         logprint(ERROR, "dbus: sd_bus_add_object_vtable failed: %s",
                  strerror(-errno));

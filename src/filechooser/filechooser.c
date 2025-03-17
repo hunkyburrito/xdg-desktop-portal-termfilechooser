@@ -204,7 +204,6 @@ static int method_open_file(sd_bus_message *msg, void *data,
         return ret;
     }
 
-    // TODO: cleanup this
     struct xdpw_request *req =
         xdpw_request_create(sd_bus_message_get_bus(msg), handle);
     if (req == NULL) {
@@ -347,7 +346,6 @@ static int method_save_file(sd_bus_message *msg, void *data,
         }
     }
 
-    // TODO: cleanup this
     struct xdpw_request *req =
         xdpw_request_create(sd_bus_message_get_bus(msg), handle);
     if (req == NULL) {
@@ -505,9 +503,13 @@ static const sd_bus_vtable filechooser_vtable[] = {
 
 int xdpw_filechooser_init(struct xdpw_state *state)
 {
-    // TODO: cleanup
     sd_bus_slot *slot = NULL;
     logprint(DEBUG, "dbus: init %s", interface_name);
-    return sd_bus_add_object_vtable(state->bus, &slot, object_path,
-                                    interface_name, filechooser_vtable, state);
+    int ret;
+    ret = sd_bus_add_object_vtable(state->bus, &slot, object_path, interface_name, filechooser_vtable, state);
+    if (ret < 0) {
+        logprint(ERROR, "dbus: filechooser init failed: %s", strerror(-ret));
+    }
+
+    return ret;
 }
