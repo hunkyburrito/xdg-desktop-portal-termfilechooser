@@ -25,7 +25,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     struct xdpw_state *state = data;
     char *cmd_script = state->config->filechooser_conf.cmd;
     if (!cmd_script) {
-        logprint(ERROR, "cmd not specified");
+        logprint(ERROR, "filechooser: cmd not specified");
         return -1;
     }
 
@@ -52,30 +52,32 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         // clear contents
         FILE *fp = fopen(filename, "w");
         if (fp == NULL) {
-            logprint(ERROR, "Failed to open '%s' in write mode for clearing.");
+            logprint(ERROR, "filechooser: could not open '%s' for clearing.");
             free(filename);
             return -1;
         }
         if (fclose(fp) != 0) {
-            logprint(ERROR, "Failed to close '%s' after clearing.");
+            logprint(ERROR,
+                     "filechooser: could not close '%s' after clearing.");
             free(filename);
             return -1;
         }
     }
 
     for (int i = 0, ret = 0; i < env->num_vars; i++) {
-        logprint(TRACE, "setting env: %s=%s", (env->vars + i)->name,
-                 (env->vars + i)->value);
-        ret = setenv((env->vars + i)->name, (env->vars + i)->value, 1);
+        logprint(TRACE, "filechooser: setting env: %s=%s", env->vars[i].name,
+                 env->vars[i].value);
+        ret = setenv(env->vars[i].name, env->vars[i].value, 1);
         if (ret) {
-            logprint(WARN, "could not set env %s: %s", (env->vars + i)->name,
-                     strerror(errno));
+            logprint(WARN, "filechooser: could not set env '%s': %s",
+                     env->vars[i].name, strerror(errno));
         }
     }
-    logprint(TRACE, "executing command: %s", cmd);
+    logprint(TRACE, "filechooser: executing command '%s'", cmd);
     int ret = system(cmd);
     if (ret) {
-        logprint(ERROR, "could not execute %s: %s", cmd, strerror(errno));
+        logprint(ERROR, "filechooser: could not execute '%s': %s", cmd,
+                 strerror(errno));
         free(cmd);
         return -1;
     }
@@ -83,7 +85,8 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
 
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
-        logprint(ERROR, "Failed to open '%s' in read mode.", filename);
+        logprint(ERROR, "filechooser: failed to open '%s' in read mode.",
+                 filename);
         free(filename);
         return -1;
     }
@@ -99,6 +102,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
             nchars = 0;
         }
         if (ferror(fp)) {
+            fclose(fp);
             return 1;
         }
     } while (cr != EOF);
@@ -127,6 +131,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
                 free((*selected_files)[j]);
             }
             free(*selected_files);
+            fclose(fp);
             return 1;
         }
         encoded =
@@ -218,10 +223,10 @@ static int method_open_file(sd_bus_message *msg, void *data,
         goto cleanup;
     }
 
-    logprint(TRACE, "(OpenFile) Number of selected files: %d",
+    logprint(TRACE, "filechooser: (OpenFile) Number of selected files: %d",
              num_selected_files);
     for (size_t i = 0; i < num_selected_files; i++) {
-        logprint(TRACE, "%d. %s", i, selected_files[i]);
+        logprint(TRACE, "filechooser: %d. %s", i, selected_files[i]);
     }
 
     sd_bus_message *reply = NULL;
@@ -356,7 +361,7 @@ static int method_save_file(sd_bus_message *msg, void *data,
         struct xdpw_state *state = data;
         char *default_dir = state->config->filechooser_conf.default_dir;
         if (!default_dir) {
-            logprint(ERROR, "default_dir not specified");
+            logprint(ERROR, "filechooser: default_dir not specified");
             return -1;
         }
         current_folder = default_dir;
@@ -418,10 +423,10 @@ static int method_save_file(sd_bus_message *msg, void *data,
         goto cleanup;
     }
 
-    logprint(TRACE, "(SaveFile) Number of selected files: %d",
+    logprint(TRACE, "filechooser: (SaveFile) Number of selected files: %d",
              num_selected_files);
     for (size_t i = 0; i < num_selected_files; i++) {
-        logprint(TRACE, "%d. %s", i, selected_files[i]);
+        logprint(TRACE, "filechooser: %d. %s", i, selected_files[i]);
     }
 
     sd_bus_message *reply = NULL;
@@ -506,7 +511,8 @@ int xdpw_filechooser_init(struct xdpw_state *state)
     sd_bus_slot *slot = NULL;
     logprint(DEBUG, "dbus: init %s", interface_name);
     int ret;
-    ret = sd_bus_add_object_vtable(state->bus, &slot, object_path, interface_name, filechooser_vtable, state);
+    ret = sd_bus_add_object_vtable(state->bus, &slot, object_path,
+                                   interface_name, filechooser_vtable, state);
     if (ret < 0) {
         logprint(ERROR, "dbus: filechooser init failed: %s", strerror(-ret));
     }
