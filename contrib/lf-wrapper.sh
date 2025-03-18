@@ -1,71 +1,32 @@
 #!/bin/sh
 # This wrapper script is invoked by xdg-desktop-portal-termfilechooser.
 #
-# Inputs:
-# 1. "1" if multiple files can be chosen, "0" otherwise.
-# 2. "1" if a directory should be chosen, "0" otherwise.
-# 3. "0" if opening files was requested, "1" if writing to a file was
-#    requested. For example, when uploading files in Firefox, this will be "0".
-#    When saving a web page in Firefox, this will be "1".
-# 4. If writing to a file, this is recommended path provided by the caller. For
-#    example, when saving a web page in Firefox, this will be the recommended
-#    path Firefox provided, such as "~/Downloads/webpage_title.html".
-#    Note that if the path already exists, we keep appending "_" to it until we
-#    get a path that does not exist.
-# 5. The output path, to which results should be written.
-#
-# Output:
-# The script should print the selected paths to the output path (argument #5),
-# one path per line.
-# If nothing is printed, then the operation is assumed to have been canceled.
+# For more information about input/output arguments read `xdg-desktop-portal-termfilechooser(5)`
 
-################################################################################
-# At the time of writing, there is currently no good way to select directories.
-# There are two methods:
-#   1. Select directory and :open any file
-#   2. Create a keybinding like:
-#       map Q :{{
-#           $echo "$fs" > "/tmp/termfilechooser-$(id -u).portal"
-#           quit
-#       }}
+set -ex
+PATH="/usr/bin:/bin"
 
-# Set default folder when download.
-default_dir="$HOME"
 multiple="$1"
 directory="$2"
 save="$3"
 path="$4"
 out="$5"
+
 cmd="lf"
 termcmd="${TERMCMD:-kitty --title 'termfilechooser'}"
+
 if [ "$save" = "1" ]; then
+    # save a file
 	set -- -selection-path "$out" "$path"
-	printf '%s' 'xdg-desktop-portal-termfilechooser saving files tutorial
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!                 === WARNING! ===                 !!!
-!!! The contents of *whatever* file you open last in !!!
-!!! lf will be *overwritten*!                        !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-Instructions:
-1) Move this file wherever you want.
-2) Rename the file if needed.
-3) Confirm your selection by opening the file, for
-   example by pressing <Enter>.
-Notes:
-1) This file is provided for your convenience. You
-   could delete it and choose another file to overwrite
-   that, for example.
-2) If you quit lf without opening a file, this file
-   will be removed and the save operation aborted.
-' >"$path"
 elif [ "$directory" = "1" ]; then
-	set -- -selection-path "$out" "$default_dir"
+    # upload files from a directory
+	set -- -last-dir-path "$out" "$path"
 elif [ "$multiple" = "1" ]; then
-	set -- -selection-path "$out" "$default_dir"
+    # upload multiple files
+	set -- -selection-path "$out" "$path"
 else
-	set -- -selection-path "$out" "$default_dir"
+    # upload only 1 file
+	set -- -selection-path "$out" "$path"
 fi
 
 command="$termcmd $cmd"
@@ -77,9 +38,3 @@ for arg in "$@"; do
 done
 
 sh -c "$command"
-
-if [ "$save" = "1" ]; then
-    if [ ! -s "$out" ] || [ "$path" != "$(cat "$out")" ]; then
-        rm "$path"
-    fi
-fi

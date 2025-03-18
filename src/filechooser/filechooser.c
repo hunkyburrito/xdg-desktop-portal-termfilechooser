@@ -1,3 +1,4 @@
+#include "logger.h"
 #include "uri.h"
 #include "xdptf.h"
 #include <errno.h>
@@ -14,6 +15,23 @@
 
 #define PATH_PREFIX "file://"
 #define PATH_PORTAL_BASE "/tmp/termfilechooser"
+
+static const char instructions[] =
+    "xdg-desktop-portal-termfilechooser saving files tutorial\n\n"
+    "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+    "!!!                 === WARNING! ===                 !!!\n"
+    "!!! The contents of *whatever* file you open last in !!!\n"
+    "!!! your file manager will be *overwritten*!         !!!\n"
+    "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n"
+    "Instructions:\n"
+    "1) Move this file wherever you want.\n"
+    "2) Rename the file if needed.\n"
+    "3) Confirm your selection by opening the file.\n\n"
+    "Notes:\n"
+    "1) This file is provided for your convenience. You\n"
+    "   could delete it and choose another file to overwrite.\n"
+    "2) If you quit without opening a file, this file\n"
+    "   will be removed and the save operation aborted.\n";
 
 static const char object_path[] = "/org/freedesktop/portal/desktop";
 static const char interface_name[] = "org.freedesktop.impl.portal.FileChooser";
@@ -455,8 +473,18 @@ static int method_save_file(sd_bus_message *msg, void *data,
 
     char **selected_files = NULL;
     size_t num_selected_files = 0;
+
+    FILE *temp_file = fopen(path, "w");
+    if (!temp_file) {
+        logprint(ERROR, "filechooser: could not write temporary file");
+        return -1;
+    }
+    fputs(instructions, temp_file);
+    fclose(temp_file);
+
     ret = exec_filechooser(data, true, false, false, path, &selected_files,
                            &num_selected_files);
+
     if (ret || num_selected_files == 0) {
         remove(path);
         goto cleanup;
@@ -464,8 +492,15 @@ static int method_save_file(sd_bus_message *msg, void *data,
 
     logprint(TRACE, "filechooser: (SaveFile) Number of selected files: %d",
              num_selected_files);
+    char *decoded = NULL;
     for (size_t i = 0; i < num_selected_files; i++) {
         logprint(TRACE, "filechooser: %d. %s", i, selected_files[i]);
+        decoded = malloc(1 + strlen(selected_files[i]));
+        uri_decode(selected_files[i], strlen(selected_files[i]), decoded);
+        if (decoded && strcmp(decoded + strlen(PATH_PREFIX), path) != 0) {
+            remove(path);
+        }
+        free(decoded);
     }
 
     sd_bus_message *reply = NULL;
