@@ -140,8 +140,10 @@ static bool file_exists(const char *path)
 
 static void set_default_config(struct config_filechooser *config)
 {
+    const char *home = getenv("HOME");
+
     const char *default_cmd = "yazi-wrapper.sh";
-    const char *default_dir = "/tmp";
+    const char *default_dir = home ? home : "/tmp";
 
     if (access(default_cmd, F_OK) && access(default_cmd, R_OK | X_OK)) {
         config->cmd = strdup(default_cmd);
