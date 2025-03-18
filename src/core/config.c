@@ -6,6 +6,33 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <wordexp.h>
+
+static char *shell_expand(const char *input)
+{
+    wordexp_t p;
+    if (wordexp(input, &p, 0) != 0) {
+        // return original if expansion fails
+        return strdup(input);
+    }
+
+    size_t expanded_size = 0;
+    for (size_t i = 0; i < p.we_wordc; i++) {
+        expanded_size += 1 + strlen(p.we_wordv[i]);
+    }
+    char *expanded = malloc(expanded_size);
+
+    // null beginning
+    expanded[0] = '\0';
+    for (size_t i = 0; i < p.we_wordc; i++) {
+        if (i > 0)
+            strcat(expanded, " ");
+        strcat(expanded, p.we_wordv[i]);
+    }
+
+    wordfree(&p);
+    return expanded;
+}
 
 void print_config(enum LOGLEVEL loglevel, struct xdpw_config *config)
 {
@@ -42,7 +69,7 @@ static void parse_string(char **dest, const char *value)
         return;
     }
     free(*dest);
-    *dest = strdup(value);
+    *dest = shell_expand(value);
 }
 
 static void parse_env(struct environment *env, const char *envstr)
@@ -60,6 +87,8 @@ static void parse_env(struct environment *env, const char *envstr)
 
     char *name = strndup(envstr, sep - envstr);
     char *value = strdup(sep + 1);
+    char *expanded = shell_expand(value);
+    free(value);
 
     // dynamically allocate more vars
     if (env->num_vars == env->capacity) {
@@ -69,7 +98,7 @@ static void parse_env(struct environment *env, const char *envstr)
 
     // append to env
     env->vars[env->num_vars].name = name;
-    env->vars[env->num_vars].value = value;
+    env->vars[env->num_vars].value = expanded;
     env->num_vars++;
 }
 
