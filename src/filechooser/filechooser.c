@@ -35,13 +35,13 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
 
     uid_t uid = getuid();
     size_t filename_size =
-        snprintf(NULL, 0, "%s-%u.portal", PATH_PORTAL_BASE, uid) + 1;
+        1 + snprintf(NULL, 0, "%s-%u.portal", PATH_PORTAL_BASE, uid);
     char *filename = malloc(filename_size);
     snprintf(filename, filename_size, "%s-%u.portal", PATH_PORTAL_BASE, uid);
 
-    size_t str_size = snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\'", cmd_script,
-                               multiple, directory, writing, path, filename) +
-                      1;
+    size_t str_size =
+        1 + snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\'", cmd_script, multiple,
+                     directory, writing, path, filename);
     char *cmd = malloc(str_size);
     snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\'", cmd_script, multiple,
              directory, writing, path, filename);
@@ -73,6 +73,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
                      env->vars[i].name, strerror(errno));
         }
     }
+
     logprint(TRACE, "filechooser: executing command '%s'", cmd);
     int ret = system(cmd);
     if (ret) {
@@ -93,23 +94,29 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
 
     size_t nchars = 0, num_lines = 0;
     int cr;
-    do {
-        cr = getc(fp);
-        nchars++;
+    while ((cr = getc(fp)) != EOF) {
         if (cr == '\n') {
-            if (nchars > 1)
+            if (nchars > 0)
                 num_lines++;
             nchars = 0;
+        } else {
+            nchars++;
         }
+
         if (ferror(fp)) {
             fclose(fp);
-            return 1;
+            return -1;
         }
-    } while (cr != EOF);
-    rewind(fp);
+    }
 
-    if (num_lines == 0 && nchars > 1) {
-        num_lines = 1;
+    // last line
+    if (nchars > 0)
+        num_lines++;
+
+    // rewind
+    if (fseek(fp, 0, SEEK_SET) != 0) {
+        fclose(fp);
+        return -1;
     }
 
     if (num_lines == 0) {
@@ -118,7 +125,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     }
 
     *num_selected_files = num_lines;
-    *selected_files = malloc((num_lines + 1) * sizeof(char *));
+    *selected_files = malloc((1 + num_lines) * sizeof(char *));
 
     for (size_t i = 0; i < num_lines; i++) {
         size_t n = 0;
@@ -134,13 +141,12 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
             fclose(fp);
             return 1;
         }
-        encoded =
-            malloc(nread * 3 +
-                   1); // if all chars are encoded, size = orig_size * 3 + 1
+        // if all chars are encoded, size = orig_size * 3 + 1
+        encoded = malloc(1 + nread * 3);
         size_t nenc = uri_encode(line, nread, encoded);
-        size_t str_size = nenc + strlen(PATH_PREFIX) + 1;
-        if (nenc >= 3 &&
-            !strcmp(encoded + nenc - 3, "%0A")) { // last char equal '\n'
+        size_t str_size = 1 + nenc + strlen(PATH_PREFIX);
+        // check last char equal '\n'
+        if (nenc >= 3 && !strcmp(encoded + nenc - 3, "%0A")) {
             str_size -= 3;
         }
         (*selected_files)[i] = malloc(str_size);
@@ -367,8 +373,7 @@ static int method_save_file(sd_bus_message *msg, void *data,
         current_folder = default_dir;
     }
 
-    size_t path_size =
-        snprintf(NULL, 0, "%s/%s", current_folder, current_name) + 1;
+    size_t path_size = 2 + strlen(current_folder) + strlen(current_name);
     char *path = malloc(path_size);
     snprintf(path, path_size, "%s/%s", current_folder, current_name);
 
@@ -379,8 +384,8 @@ static int method_save_file(sd_bus_message *msg, void *data,
         escape_size += (*tmp == '\'') ? 4 : 1;
         tmp++;
     }
-
-    char *escaped_path = malloc(escape_size + 1);
+    escape_size += 1;
+    char *escaped_path = malloc(escape_size);
     char *ptr = escaped_path;
     tmp = path;
     while (*tmp) {
@@ -398,19 +403,15 @@ static int method_save_file(sd_bus_message *msg, void *data,
 
     free(path);
     path = escaped_path;
+    path_size = escape_size;
 
-    bool file_already_exists = true;
-    while (file_already_exists) {
-        if (access(path, F_OK) == 0) {
-            char *path_tmp = malloc(path_size);
-            snprintf(path_tmp, path_size, "%s", path);
-            path_size += 1;
-            path = realloc(path, path_size);
-            snprintf(path, path_size, "%s_", path_tmp);
-            free(path_tmp);
-        } else {
-            file_already_exists = false;
-        }
+    while (access(path, F_OK) == 0) {
+        char *path_tmp = malloc(path_size);
+        snprintf(path_tmp, path_size, "%s", path);
+        path_size += 1;
+        path = realloc(path, path_size);
+        snprintf(path, path_size, "%s_", path_tmp);
+        free(path_tmp);
     }
 
     char **selected_files = NULL;
