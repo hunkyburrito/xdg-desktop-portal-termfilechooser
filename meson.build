@@ -50,7 +50,7 @@ else
 endif
 add_project_arguments('-DHAVE_' + sdbus.name().to_upper() + '=1', language: 'c')
 
-xdpw_files = files([
+xdptf_files = files([
     'src/core/main.c',
     'src/core/logger.c',
     'src/core/config.c',
@@ -61,7 +61,7 @@ xdpw_files = files([
 
 executable(
     'xdg-desktop-portal-termfilechooser',
-    [xdpw_files],
+    [xdptf_files],
     dependencies: [
         sdbus,
         rt,

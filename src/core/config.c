@@ -34,32 +34,32 @@ static char *shell_expand(const char *input)
     return expanded;
 }
 
-void print_config(enum LOGLEVEL loglevel, struct xdpw_config *config)
+void print_config(enum LOGLEVEL loglevel, struct config_filechooser *config)
 {
-    logprint(loglevel, "config: cmd:  %s", config->filechooser_conf.cmd);
+    logprint(loglevel, "config: cmd:  %s", config->cmd);
     logprint(loglevel, "config: default_dir:  %s",
-             config->filechooser_conf.default_dir);
-    for (int i = 0; i < config->filechooser_conf.env->num_vars; i++) {
+             config->default_dir);
+    for (int i = 0; i < config->env->num_vars; i++) {
         logprint(loglevel, "config: env:  %s=%s",
-                 config->filechooser_conf.env->vars[i].name,
-                 config->filechooser_conf.env->vars[i].value);
+                 config->env->vars[i].name,
+                 config->env->vars[i].value);
     }
 }
 
 // NOTE: calling free_config won't prepare the config to be read again from
 // config file with init_config since to pointers and other values won't be
 // reset to NULL, or 0
-void free_config(struct xdpw_config *config)
+void free_config(struct config_filechooser *config)
 {
     logprint(DEBUG, "config: freeing config");
-    free(config->filechooser_conf.cmd);
-    free(config->filechooser_conf.default_dir);
-    for (int i = 0; i < config->filechooser_conf.env->num_vars; i++) {
-        free(config->filechooser_conf.env->vars[i].name);
-        free(config->filechooser_conf.env->vars[i].value);
+    free(config->cmd);
+    free(config->default_dir);
+    for (int i = 0; i < config->env->num_vars; i++) {
+        free(config->env->vars[i].name);
+        free(config->env->vars[i].value);
     }
-    free(config->filechooser_conf.env->vars);
-    free(config->filechooser_conf.env);
+    free(config->env->vars);
+    free(config->env);
 }
 
 static void parse_string(char **dest, const char *value)
@@ -121,12 +121,12 @@ static int handle_ini_filechooser(struct config_filechooser *filechooser_conf,
 static int handle_ini_config(void *data, const char *section, const char *key,
                              const char *value)
 {
-    struct xdpw_config *config = (struct xdpw_config *)data;
+    struct config_filechooser *config = (struct config_filechooser *)data;
     logprint(TRACE, "config: parsing section %s, key %s, value %s", section,
              key, value);
 
     if (strcmp(section, "filechooser") == 0) {
-        return handle_ini_filechooser(&config->filechooser_conf, key, value);
+        return handle_ini_filechooser(config, key, value);
     }
 
     logprint(TRACE, "config: skipping invalid section in config file");
@@ -138,25 +138,25 @@ static bool file_exists(const char *path)
     return path && access(path, R_OK) != -1;
 }
 
-static void set_default_config(struct xdpw_config *config)
+static void set_default_config(struct config_filechooser *config)
 {
     const char *default_cmd = "yazi-wrapper.sh";
     const char *default_dir = "/tmp";
 
     if (access(default_cmd, F_OK) && access(default_cmd, R_OK | X_OK)) {
-        config->filechooser_conf.cmd = strdup(default_cmd);
+        config->cmd = strdup(default_cmd);
     } else {
         logprint(ERROR, "config: default cmd '%s' is not executable",
                  default_cmd);
     }
 
-    config->filechooser_conf.default_dir = strdup(default_dir);
+    config->default_dir = strdup(default_dir);
 
     struct environment *env = malloc(sizeof(struct environment));
     env->num_vars = 0;
     env->capacity = 10;
     env->vars = calloc(env->capacity, sizeof(struct env_var));
-    config->filechooser_conf.env = env;
+    config->env = env;
 }
 
 static char *build_config_path(const char *base, const char *filename)
@@ -257,13 +257,13 @@ static void init_wrapper_path(struct environment *env,
     free(path_env);
 }
 
-void init_config(char **const configfile, struct xdpw_config *config)
+void init_config(char **const configfile, struct config_filechooser *config)
 {
     if (!*configfile)
         *configfile = get_config_path();
 
     set_default_config(config);
-    init_wrapper_path(config->filechooser_conf.env, *configfile);
+    init_wrapper_path(config->env, *configfile);
 
     if (!*configfile) {
         logprint(ERROR, "config: no config file found, using the default");

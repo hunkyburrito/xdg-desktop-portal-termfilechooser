@@ -1,5 +1,5 @@
 #include "uri.h"
-#include "xdpw.h"
+#include "xdptf.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -22,8 +22,8 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
                             bool directory, char *path, char ***selected_files,
                             size_t *num_selected_files)
 {
-    struct xdpw_state *state = data;
-    char *cmd_script = state->config->filechooser_conf.cmd;
+    struct xdptf_state *state = data;
+    char *cmd_script = state->config->cmd;
     if (!cmd_script) {
         logprint(ERROR, "filechooser: cmd not specified");
         return -1;
@@ -46,7 +46,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\'", cmd_script, multiple,
              directory, writing, path, filename);
 
-    struct environment *env = state->config->filechooser_conf.env;
+    struct environment *env = state->config->env;
 
     if (access(filename, F_OK) == 0) {
         // clear contents
@@ -229,8 +229,8 @@ static int method_open_file(sd_bus_message *msg, void *data,
         return ret;
     }
 
-    struct xdpw_request *req =
-        xdpw_request_create(sd_bus_message_get_bus(msg), handle);
+    struct xdptf_request *req =
+        xdptf_request_create(sd_bus_message_get_bus(msg), handle);
     if (req == NULL) {
         return -ENOMEM;
     }
@@ -238,8 +238,8 @@ static int method_open_file(sd_bus_message *msg, void *data,
     char **selected_files = NULL;
     size_t num_selected_files = 0;
     if (current_folder == NULL) {
-        struct xdpw_state *state = data;
-        char *default_dir = state->config->filechooser_conf.default_dir;
+        struct xdptf_state *state = data;
+        char *default_dir = state->config->default_dir;
         if (!default_dir) {
             logprint(ERROR, "filechooser: default_dir not specified");
             return -1;
@@ -322,7 +322,7 @@ cleanup:
     }
     free(selected_files);
 
-    xdpw_request_destroy(req);
+    xdptf_request_destroy(req);
     return ret;
 }
 
@@ -382,7 +382,9 @@ static int method_save_file(sd_bus_message *msg, void *data,
                 return inner_ret;
             }
             current_name = (char *)p;
-            logprint(DEBUG, "dbus: option replace current_name with current_file: %s", current_name);
+            logprint(DEBUG,
+                     "dbus: option replace current_name with current_file: %s",
+                     current_name);
         } else {
             logprint(WARN, "dbus: unknown option %s", key);
             sd_bus_message_skip(msg, "v");
@@ -394,15 +396,15 @@ static int method_save_file(sd_bus_message *msg, void *data,
         }
     }
 
-    struct xdpw_request *req =
-        xdpw_request_create(sd_bus_message_get_bus(msg), handle);
+    struct xdptf_request *req =
+        xdptf_request_create(sd_bus_message_get_bus(msg), handle);
     if (req == NULL) {
         return -ENOMEM;
     }
 
     if (current_folder == NULL) {
-        struct xdpw_state *state = data;
-        char *default_dir = state->config->filechooser_conf.default_dir;
+        struct xdptf_state *state = data;
+        char *default_dir = state->config->default_dir;
         if (!default_dir) {
             logprint(ERROR, "filechooser: default_dir not specified");
             return -1;
@@ -531,7 +533,7 @@ cleanup:
     free(selected_files);
     free(path);
 
-    xdpw_request_destroy(req);
+    xdptf_request_destroy(req);
     return ret;
 }
 
@@ -543,7 +545,7 @@ static const sd_bus_vtable filechooser_vtable[] = {
                   SD_BUS_VTABLE_UNPRIVILEGED),
     SD_BUS_VTABLE_END};
 
-int xdpw_filechooser_init(struct xdpw_state *state)
+int xdptf_filechooser_init(struct xdptf_state *state)
 {
     sd_bus_slot *slot = NULL;
     logprint(DEBUG, "dbus: init %s", interface_name);

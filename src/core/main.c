@@ -1,7 +1,8 @@
 #include "config.h"
 #include "logger.h"
-#include "xdpw.h"
+#include "xdptf.h"
 #include <getopt.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -13,7 +14,7 @@ void handle_sigterm(int sig) { keep_running = false; }
 static const char service_name[] =
     "org.freedesktop.impl.portal.desktop.termfilechooser";
 
-static int xdpw_usage(FILE *stream, int rc)
+static int xdptf_usage(FILE *stream, int rc)
 {
     static const char *usage =
         "Usage: xdg-desktop-portal-termfilechooser [options]\n"
@@ -113,7 +114,7 @@ int main(int argc, char *argv[])
     signal(SIGTERM, handle_sigterm);
     signal(SIGINT, handle_sigterm);
 
-    struct xdpw_config config = {};
+    struct config_filechooser config = {};
     char *configfile = NULL;
     enum LOGLEVEL loglevel = DEFAULT_LOGLEVEL;
     bool replace = false;
@@ -143,9 +144,9 @@ int main(int argc, char *argv[])
                 replace = true;
                 break;
             case 'h':
-                return xdpw_usage(stdout, EXIT_SUCCESS);
+                return xdptf_usage(stdout, EXIT_SUCCESS);
             default:
-                return xdpw_usage(stderr, EXIT_FAILURE);
+                return xdptf_usage(stderr, EXIT_FAILURE);
         }
     }
 
@@ -163,12 +164,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    struct xdpw_state state = {
+    struct xdptf_state state = {
         .bus = bus,
         .config = &config,
     };
 
-    xdpw_filechooser_init(&state);
+    xdptf_filechooser_init(&state);
 
     while (keep_running) {
         ret = sd_bus_process(state.bus, NULL);

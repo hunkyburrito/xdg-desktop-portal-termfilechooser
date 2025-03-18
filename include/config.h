@@ -20,12 +20,8 @@ struct config_filechooser {
     struct environment *env;
 };
 
-struct xdpw_config {
-    struct config_filechooser filechooser_conf;
-};
-
-void print_config(enum LOGLEVEL loglevel, struct xdpw_config *config);
-void free_config(struct xdpw_config *config);
-void init_config(char **const configfile, struct xdpw_config *config);
+void print_config(enum LOGLEVEL loglevel, struct config_filechooser *config);
+void free_config(struct config_filechooser *config);
+void init_config(char **const configfile, struct config_filechooser *config);
 
 #endif
