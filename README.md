@@ -302,3 +302,12 @@ MIT
 [Original Author: GermainZ](https://github.com/GermainZ/xdg-desktop-portal-termfilechooser)
 
 [Upstream Author: boydaihungst](https://github.com/boydaihungst/xdg-desktop-portal-termfilechooser)
+
+[xdg-desktop-portal]: https://github.com/flatpak/xdg-desktop-portal
+[xdg-desktop-portal-wlr]: https://github.com/emersion/xdg-desktop-portal-wlr
+[fzf]: https://github.com/junegunn/fzf
+[lf]: https://github.com/gokcehan/lf
+[nnn]: https://github.com/jarun/nnn
+[ranger]: https://github.com/ranger/ranger
+[vifm]: https://github.com/vifm/vifm
+[yazi]: https://github.com/sxyazi/yazi
