@@ -1,0 +1,48 @@
+name: test-build
+
+on: [push, pull_request, workflow_call]
+
+env:
+  UBUNTU_DEP_BUILD: |
+    build-essential libinih-dev libsystemd-dev
+    meson ninja-build scdoc xdg-desktop-portal
+  COLUMNS: 80
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: default
+            meson_args: ""
+          - name: plain
+            meson_args: "-Dbuildtype=plain"
+          - name: release
+            meson_args: "-Dbuildtype=release"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/pkginstall
+        with:
+          apt: $UBUNTU_DEP_BUILD
+      - name: meson test ${{matrix.meson_args}}
+        uses: ./.github/actions/meson
+        with:
+          meson_args: --prefix=$PWD/_instdir ${{matrix.meson_args}}
+          ninja_args: install
+      - name: check installation of data files
+        run: diff -u <(cd contrib; tree) <(cd _instdir/share/xdg-desktop-portal-termfilechooser; tree)
+      - name: ninja uninstall
+        uses: ./.github/actions/meson
+        with:
+          meson_args: --prefix=$PWD/_instdir
+          ninja_args: uninstall
+      - name: check for leftovers
+        run: (test -d _instdir && tree _instdir && exit 1) || exit 0
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: "meson test logs ${{ matrix.name }}"
+          path: |
+            build/meson-logs/testlog*.txt
+            build/meson-logs/meson-log.txt

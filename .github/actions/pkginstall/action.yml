@@ -1,0 +1,10 @@
+name: "Install packages"
+description: "Install a set of packages with apt"
+inputs:
+  apt:
+    description: "The package list to install with apt"
+runs:
+  using: "composite"
+  steps:
+    - run: sudo ${{ github.action_path }}/install-apt.sh ${{ inputs.apt }}
+      shell: bash
