@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     signal(SIGTERM, handle_sigterm);
     signal(SIGINT, handle_sigterm);
 
-    struct config_filechooser config = {};
+    struct config_filechooser config = {0};
     char *configfile = NULL;
     enum LOGLEVEL loglevel = DEFAULT_LOGLEVEL;
     bool replace = false;

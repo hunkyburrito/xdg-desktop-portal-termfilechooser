@@ -20,6 +20,11 @@ static char *shell_expand(const char *input)
     for (size_t i = 0; i < p.we_wordc; i++) {
         expanded_size += 1 + strlen(p.we_wordv[i]);
     }
+
+    if (!expanded_size){
+        return strdup(input);
+    }
+
     char *expanded = malloc(expanded_size);
 
     // null beginning
