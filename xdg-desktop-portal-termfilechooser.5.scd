@@ -87,15 +87,15 @@ These options need to be placed under the *[filechooser]* section.
 	- _$XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser_
 	- _/usr/local/share/xdg-desktop-portal-termfilechooser_
 	- _/usr/share/xdg-desktop-portal-termfilechooser_
-	- Global $PATH
+	- Global *$PATH*
 
 	The default value is yazi-wrapper.sh
 
 *default_dir* = _directory_
-	Default directory to save files in if the invoking program does not
+	Default directory to open in your file manager if the invoking program does not
 	provide one.
 
-	The default value is /tmp.
+	The default value is *$HOME* with a fallback of */tmp*.
 
 *env* = _name_=_value_
 	Environment variable to launch *cmd* with. This key allows for several
@@ -107,7 +107,7 @@ These options need to be placed under the *[filechooser]* section.
 ```
 [filechooser]
 cmd=yazi-wrapper.sh
-default_dir=$HOME/Downloads
+default_dir=$HOME
 env=TERMCMD=foot
 	EDITOR=nvim
 ```
