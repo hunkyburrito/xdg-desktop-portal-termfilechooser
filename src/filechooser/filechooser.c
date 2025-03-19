@@ -95,8 +95,14 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     logprint(TRACE, "filechooser: executing command '%s'", cmd);
     int ret = system(cmd);
     if (ret) {
-        logprint(ERROR, "filechooser: could not execute '%s': %s", cmd,
-                 strerror(errno));
+        if (ret == -1) {
+            logprint(ERROR, "filechooser: could not execute '%s': %s", cmd,
+                     strerror(errno));
+        } else {
+            // FIX: properly get exit code
+            logprint(ERROR, "filechooser: could not execute '%s': exit code %d", cmd,
+                     -ret/256);
+        }
         free(cmd);
         return -1;
     }
