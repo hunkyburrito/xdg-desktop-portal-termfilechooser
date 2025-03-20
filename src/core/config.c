@@ -241,7 +241,8 @@ static void init_wrapper_path(struct environment *env,
             *last_slash = '\0';
         }
     } else {
-        config_path = "";
+        config_path = malloc(1);
+        *config_path = '\0';
     }
 
     const char *const wrapper_paths =
