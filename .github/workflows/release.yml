@@ -6,11 +6,11 @@ on:
       - "v*.*.*"
 
 jobs:
-  test-build:
+  test:
     uses: ./.github/workflows/test-build.yml
   tagged-release:
     runs-on: ubuntu-latest
-    needs: [test-build]
+    needs: [test]
     permissions:
       contents: write
     steps:
