@@ -213,6 +213,8 @@ If your xdg-desktop-portal version (`/usr/lib/xdg-desktop-portal --version`) is 
 
 ```
     ### $XDG_CONFIG_HOME/xdg-desktop-portal/portals.conf ###
+
+    [preferred]
     org.freedesktop.impl.portal.FileChooser=termfilechooser
 ```
 
