@@ -83,23 +83,32 @@ Known distributions that require this are Alpine/postmarketOS, Debian, and Arch 
 By default, the contents of the `contrib` folder are placed in `/usr/local/share/xdg-desktop-portal-termfilechooser/`.
 Copy the `config` to `$XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/` and edit it to set your preferred wrapper and default directory.
 
-Wrappers specified within the `cmd` key in the `config` are searched for in order of the following directories unless the full path is specified.
+The configuration is as follows:
+
+`[filechooser]`
+
+- `cmd`: The wrapper script/command to run.
+- `default_dir`: The default directory to open if the application (e.g. firefox) does not suggest a path.
+- `env`: Sets the specified environment variables with the specified values.
+    - `TERMCMD`: The environment variable that sets what command to use for launching a terminal.
+
+Wrappers specified within the `cmd` key in the `config` are searched for in order of the following directories unless the absolute path is specified.
 
 - `$XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser`
 - `/usr/local/share/xdg-desktop-portal-termfilechooser`
 - `/usr/share/xdg-desktop-portal-termfilechooser`
 - Any other directory in your `$PATH`
 
-The main options for customizing how your specified filepicker launches (in recommended order) are:
+Setting `TERMCMD` can be done with the following methods (in recommended order):
 
-- Editing the `env` key in the `config`
+- Using the `env` key in the `config`
 - Editing the `cmd` key in the `config`
 - Exporting a global `TERMCMD` environment variable
 - Creating/Editing your own wrapper file
 
 ### Examples
 
-#### Editing `env`:
+#### Using `env`:
 
 Note: Setting environment variables in the config with `env` does not require you to quote the entire value. See example below.
 
