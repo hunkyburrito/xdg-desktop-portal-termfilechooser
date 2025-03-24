@@ -396,6 +396,11 @@ static int method_save_file(sd_bus_message *msg, void *data,
             if (inner_ret < 0) {
                 return inner_ret;
             }
+            inner_ret = sd_bus_message_exit_container(msg);
+            if (inner_ret < 0) {
+                return inner_ret;
+            }
+
             current_folder = (char *)p;
             logprint(DEBUG, "dbus: option current_folder: %s", current_folder);
         } else if (strcmp(key, "current_file") == 0) {
@@ -410,6 +415,11 @@ static int method_save_file(sd_bus_message *msg, void *data,
             if (inner_ret < 0) {
                 return inner_ret;
             }
+            inner_ret = sd_bus_message_exit_container(msg);
+            if (inner_ret < 0) {
+                return inner_ret;
+            }
+
             current_name = (char *)p;
             logprint(DEBUG,
                      "dbus: option replace current_name with current_file: %s",
