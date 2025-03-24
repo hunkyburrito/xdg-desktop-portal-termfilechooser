@@ -59,7 +59,7 @@ On apt-based systems:
 
 On Alpine/postmarketOS:
 
-    sudo apk add meson ninja-build clang cmake pkgconfig inih-dev basu-dev scdoc xdg-desktop-portal
+    sudo apk add meson musl-dev ninja-build clang cmake pkgconfig inih-dev basu-dev scdoc xdg-desktop-portal
 
 On Arch-based systems:
 

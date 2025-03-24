@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "xdptf.h"
 #include <getopt.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
