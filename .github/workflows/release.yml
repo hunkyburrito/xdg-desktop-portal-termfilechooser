@@ -21,4 +21,5 @@ jobs:
         with:
           generate_release_notes: true
           prerelease: false
-          draft: false
+          draft: true
+          name: "Release ${{ github.ref_name }}"
