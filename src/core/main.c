@@ -28,10 +28,18 @@ static int xdptf_usage(FILE *stream, int rc)
         "                                     (default is "
         "$XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config)\n"
         "    -r, --replace                    Replace a running instance.\n"
+        "    -v, --version                    Print the current version.\n"
         "    -h, --help                       Get help (this text).\n"
         "\n";
 
     fprintf(stream, "%s", usage);
+    return rc;
+}
+
+static int print_version(int rc)
+{
+    // Retrieve version from meson.build
+    fprintf(stdout, "xdg-desktop-portal-termfilechooser %s\n", TERMFILECHOOSER_VERSION);
     return rc;
 }
 
@@ -120,11 +128,12 @@ int main(int argc, char *argv[])
     enum LOGLEVEL loglevel = DEFAULT_LOGLEVEL;
     bool replace = false;
 
-    static const char *shortopts = "l:c:rh";
+    static const char *shortopts = "l:c:rhv";
     static const struct option longopts[] = {
         {"loglevel", required_argument, NULL, 'l'},
         {"config", required_argument, NULL, 'c'},
         {"replace", no_argument, NULL, 'r'},
+        {"version", no_argument, NULL, 'v'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, NULL, 0}};
 
@@ -143,6 +152,9 @@ int main(int argc, char *argv[])
                 break;
             case 'r':
                 replace = true;
+                break;
+            case 'v':
+                return print_version(EXIT_SUCCESS);
                 break;
             case 'h':
                 return xdptf_usage(stdout, EXIT_SUCCESS);
