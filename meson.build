@@ -130,7 +130,7 @@ install_subdir(
     strip_directory: true,
 )
 
-scdoc = dependency('scdoc', required: get_option('man-pages'), version: '>= 1.9.7')
+scdoc = dependency('scdoc', required: get_option('man-pages'), version: '>= 1.9.7', native: true)
 if scdoc.found()
     man_pages = ['xdg-desktop-portal-termfilechooser.5.scd']
     foreach src : man_pages
