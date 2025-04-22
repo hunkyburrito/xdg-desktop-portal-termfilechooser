@@ -91,6 +91,8 @@ The configuration is as follows:
 - `default_dir`: The default directory to open if the application (e.g. firefox) does not suggest a path.
 - `env`: Sets the specified environment variables with the specified values.
     - `TERMCMD`: The environment variable that sets what command to use for launching a terminal.
+- `open_mode`: Sets the mode for the starting path when selecting files/directories. Must be one of *suggested*, *default*, or *last*. See `man 5 xdg-desktop-portal-termfilechooser` for more info.
+- `save_mode`: Sets the mode for the starting path when saving files. Must be one of *suggested*, *default*, or *last*. See `man 5 xdg-desktop-portal-termfilechooser` for more info.
 
 Wrappers specified within the `cmd` key in the `config` are searched for in order of the following directories unless the absolute path is specified.
 
@@ -120,6 +122,8 @@ cmd=yazi-wrapper.sh
 default_dir=$HOME
 env=TERMCMD=foot -T "terminal filechooser"
     VARIABLE2=VALUE2
+open_mode = suggested
+save_mode = last
 ```
 
 OR
@@ -132,6 +136,8 @@ cmd=yazi-wrapper.sh
 default_dir=$HOME
 env=TERMCMD=foot -T "terminal filechooser"
 env=VARIABLE2=VALUE2
+open_mode = suggested
+save_mode = last
 ```
 
 Environment variables can also be unset. (e.g. `env=VARIABLE=`)
@@ -146,6 +152,8 @@ Note: Setting environment variables through prepending requires proper quoting a
 [filechooser]
 cmd=TERMCMD='foot -T "terminal filechooser"' yazi-wrapper.sh
 default_dir=$HOME
+open_mode = suggested
+save_mode = last
 ```
 
 #### Exporting a global:
@@ -171,6 +179,8 @@ Make your changes, then:
 # prioritizes `yazi-wrapper.sh` in `$XDG_CONFIG_HOME` dir over `/usr/local/share` and `/usr/share` dirs
 cmd=yazi-wrapper.sh
 default_dir=$HOME
+open_mode = suggested
+save_mode = last
 ```
 
 ## Usage
@@ -250,9 +260,13 @@ If your version is older, you can remove `FileChooser` from `Interfaces` of the 
 - For GTK applications, try setting the `GDK_DEBUG=portals` environment variable when running the problematic application. If that doesn't help, try using the [deprecated](https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/4829) `GTK_USE_PORTAL=1` instead.
 - For electron applications, try using a package built against a newer electron version. Older electron versions do not support the filechooser portal, and some versions have broken support (see https://github.com/electron/electron/issues/43819).
 
+3. Outdated version
+
+- Ensure you are on the most up-to-date version of `termfilechooser`. The version can be checked by running `/usr/local/lib/xdg-desktop-portal-termfilechooser -v` (correct path as needed).
+
 See also: [Troubleshooting section in ArchWiki](https://wiki.archlinux.org/title/XDG_Desktop_Portal#Troubleshooting).
 
-If the above do not help, please continue troubleshooting and submit an issue/PR about the issue.
+If the above do not help, please continue troubleshooting and submit an issue/PR about the problem.
 
 ### Logs
 

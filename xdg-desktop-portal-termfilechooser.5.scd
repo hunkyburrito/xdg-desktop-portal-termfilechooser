@@ -102,6 +102,29 @@ These options need to be placed under the *[filechooser]* section.
 	environment variables to be set. Either set *env=* multiple times, or indent
 	the values as shown in *EXAMPLE CONFIG*
 
+*open_mode* = _mode_
+	Sets what path the file manager starts in when selecting
+	files/directories. The _mode_ needs to be one of *suggested*, *default*, or
+	*last*. A brief description of these modes is:
+
+	_suggested_ - Uses the application's suggested path. ++
+_default_ - Uses the value set for *default_dir*.++
+_last_ - Uses the parent directory of the last selected file. If the last
+	selection was a directory, that is used instead.
+
+	The default value is *suggested*.
+
+*save_mode* = _mode_
+	Sets what path the file manager starts in when saving files. The _mode_ needs to be one of *suggested*, *default*, or
+	*last*.
+
+	_suggested_ - Uses the application's suggested path. ++
+_default_ - Uses the value set for *default_dir*.++
+_last_ - Uses the parent directory of the last selected file. If the last
+	selection was a directory, that is used instead.
+
+	The default value is *suggested*.
+
 ## EXAMPLE CONFIG
 
 ```
@@ -110,4 +133,6 @@ cmd=yazi-wrapper.sh
 default_dir=$HOME
 env=TERMCMD=foot
 	EDITOR=nvim
+open_mode=suggested
+save_mode=last
 ```
