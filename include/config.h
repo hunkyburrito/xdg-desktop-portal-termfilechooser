@@ -14,9 +14,17 @@ struct environment {
     struct env_var *vars;
 };
 
+enum Mode { MODE_SUGGESTED_DIR, MODE_DEFAULT_DIR, MODE_LAST_DIR };
+
+struct modes {
+    enum Mode open_mode;
+    enum Mode save_mode;
+};
+
 struct config_filechooser {
     char *cmd;
     char *default_dir;
+    struct modes *modes;
     struct environment *env;
 };
 

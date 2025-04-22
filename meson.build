@@ -7,7 +7,10 @@ project(
     default_options: ['c_std=c11', 'warning_level=2', 'werror=true'],
 )
 
-add_project_arguments('-DTERMFILECHOOSER_VERSION="'+meson.project_version()+'"', language: 'c')
+add_project_arguments(
+    '-DTERMFILECHOOSER_VERSION="' + meson.project_version() + '"',
+    language: 'c',
+)
 
 cc = meson.get_compiler('c')
 

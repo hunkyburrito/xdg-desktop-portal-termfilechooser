@@ -1,3 +1,4 @@
+#include "config.h"
 #include "logger.h"
 #include "uri.h"
 #include "xdptf.h"
@@ -70,13 +71,12 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         // clear contents
         FILE *fp = fopen(filename, "w");
         if (fp == NULL) {
-            logprint(ERROR, "filechooser: could not open '%s'.");
+            logprint(ERROR, "filechooser: could not open '%s'", filename);
             free(filename);
             return -1;
         }
         if (fclose(fp) != 0) {
-            logprint(ERROR,
-                     "filechooser: could not close '%s'.");
+            logprint(ERROR, "filechooser: could not close '%s'", filename);
             free(filename);
             return -1;
         }
@@ -100,8 +100,8 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
                      strerror(errno));
         } else {
             // FIX: properly get exit code
-            logprint(ERROR, "filechooser: could not execute '%s': exit code %d", cmd,
-                     -ret/256);
+            logprint(ERROR, "filechooser: could not execute '%s': exit code %d",
+                     cmd, -ret / 256);
         }
         free(cmd);
         return -1;
@@ -110,8 +110,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
 
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
-        logprint(ERROR, "filechooser: failed to open '%s'.",
-                 filename);
+        logprint(ERROR, "filechooser: failed to open '%s'", filename);
         free(filename);
         return -1;
     }
@@ -183,6 +182,173 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     fclose(fp);
     free(filename);
     return 0;
+}
+
+static char *get_last_dir_path(void)
+{
+    char *home = getenv("HOME");
+    char *state_home = getenv("XDG_STATE_HOME");
+    char *file_path = "xdg-desktop-portal-termfilechooser";
+    char *path = NULL;
+
+    if (state_home) {
+        size_t path_size =
+            1 + snprintf(NULL, 0, "%s/%s", state_home, file_path);
+        path = malloc(path_size);
+        snprintf(path, path_size, "%s/%s", state_home, file_path);
+    } else if (home) {
+        size_t path_size =
+            1 + snprintf(NULL, 0, "%s/.local/state/%s", home, file_path);
+        path = malloc(path_size);
+        snprintf(path, path_size, "%s/.local/state/%s", home, file_path);
+    }
+
+    struct stat st = {0};
+    if (stat(path, &st) == -1) {
+        mkdir(path, 0755);
+    }
+
+    return path;
+}
+
+static char *read_last_dir(void)
+{
+    char *path = get_last_dir_path();
+    char *filename = NULL;
+
+    size_t filename_size = 1 + snprintf(NULL, 0, "%s/last_dir", path);
+    filename = malloc(filename_size);
+    snprintf(filename, filename_size, "%s/last_dir", path);
+
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL) {
+        logprint(ERROR, "filechooser: failed to open '%s'", filename);
+        free(filename);
+        free(path);
+        return NULL;
+    }
+
+    char *last_dir = NULL;
+    size_t n = 0;
+    ssize_t nread = getline(&last_dir, &n, fp);
+
+    if (nread <= 0) {
+        if (ferror(fp)) {
+            logprint(ERROR, "filechooser: failed to read '%s'", filename);
+        } else {
+            logprint(ERROR, "filechooser: no data read from '%s'", filename);
+        }
+        free(last_dir);
+        free(filename);
+        free(path);
+        fclose(fp);
+        return NULL;
+    }
+
+    if (last_dir[nread - 1] == '\n') {
+        last_dir[nread - 1] = '\0';
+    }
+
+    fclose(fp);
+    free(filename);
+    free(path);
+
+    return last_dir;
+}
+
+static void write_last_dir(char *last_dir)
+{
+    if (last_dir == NULL)
+        return;
+
+    char *path = get_last_dir_path();
+    char *filename = NULL;
+
+    size_t filename_size = 1 + snprintf(NULL, 0, "%s/last_dir", path);
+    filename = malloc(filename_size);
+    snprintf(filename, filename_size, "%s/last_dir", path);
+
+    FILE *fp = fopen(filename, "w");
+    if (fp == NULL) {
+        logprint(ERROR, "filechooser: failed to open '%s': %s", filename,
+                 strerror(errno));
+        free(filename);
+        free(path);
+    }
+
+    fputs(last_dir, fp);
+    fputc('\n', fp);
+
+    fclose(fp);
+    free(filename);
+    free(path);
+}
+
+static void set_last_dir(char *encoded_selection)
+{
+    char *encoded = encoded_selection + strlen(PATH_PREFIX);
+
+    char *last_selected = malloc(1 + strlen(encoded));
+    uri_decode(encoded, strlen(encoded), last_selected);
+
+    struct stat path_stat = {0};
+    if (stat(last_selected, &path_stat) == -1) {
+        if (errno == ENOENT) {
+            logprint(ERROR, "filechooser: '%s' does not exist.", last_selected);
+        } else {
+            logprint(ERROR, "filechooser: failed to stat '%s': %s",
+                     last_selected, strerror(errno));
+        }
+    }
+
+    if (S_ISDIR(path_stat.st_mode)) {
+        write_last_dir(last_selected);
+    } else if (S_ISREG(path_stat.st_mode)) {
+        char *parent = strdup(last_selected);
+        char *last_slash = strrchr(parent, '/');
+        if (last_slash) {
+            if (last_slash != parent) {
+                *last_slash = '\0';
+            } else {
+                *++last_slash = '\0';
+            }
+        } else {
+            free(parent);
+            parent = NULL;
+        }
+        write_last_dir(parent);
+        free(parent);
+    }
+    free(last_selected);
+}
+
+static void set_current_folder(enum Mode *mode, char **default_dir,
+                               char **current_folder)
+{
+    switch (*mode) {
+        case MODE_SUGGESTED_DIR:
+            if (*current_folder != NULL)
+                *current_folder = strdup(*current_folder);
+            break;
+        case MODE_DEFAULT_DIR:
+            *current_folder = strdup(*default_dir);
+            break;
+        case MODE_LAST_DIR:
+            *current_folder = read_last_dir();
+            break;
+    }
+
+    if (*current_folder == NULL || access(*current_folder, F_OK)) {
+        if (*default_dir != NULL) {
+            *current_folder = strdup(*default_dir);
+            logprint(
+                DEBUG,
+                "filechooser: could not set current_folder; fallback to '%s'",
+                *current_folder);
+        } else {
+            logprint(WARN, "filechooser: could not set current_folder");
+        }
+    }
 }
 
 static int method_open_file(sd_bus_message *msg, void *data,
@@ -264,19 +430,16 @@ static int method_open_file(sd_bus_message *msg, void *data,
         return -ENOMEM;
     }
 
+    struct xdptf_state *state = data;
     char **selected_files = NULL;
     size_t num_selected_files = 0;
-    if (current_folder == NULL) {
-        struct xdptf_state *state = data;
-        char *default_dir = state->config->default_dir;
-        if (!default_dir) {
-            logprint(ERROR, "filechooser: default_dir not specified");
-            return -1;
-        }
-        current_folder = default_dir;
-    }
+
+    set_current_folder(&state->config->modes->open_mode,
+                       &state->config->default_dir, &current_folder);
     ret = exec_filechooser(data, false, multiple, directory, current_folder,
                            &selected_files, &num_selected_files);
+
+    free(current_folder);
     if (ret) {
         goto cleanup;
     }
@@ -285,6 +448,10 @@ static int method_open_file(sd_bus_message *msg, void *data,
              num_selected_files);
     for (size_t i = 0; i < num_selected_files; i++) {
         logprint(TRACE, "filechooser: %d. %s", i, selected_files[i]);
+    }
+
+    if (state->config->modes->open_mode == MODE_LAST_DIR) {
+        set_last_dir(selected_files[num_selected_files - 1]);
     }
 
     sd_bus_message *reply = NULL;
@@ -373,7 +540,7 @@ static int method_save_file(sd_bus_message *msg, void *data,
     }
     char *key;
     int inner_ret = 0;
-    char *current_name;
+    char *current_name = NULL;
     char *current_folder = NULL;
     while ((ret = sd_bus_message_enter_container(msg, 'e', "sv")) > 0) {
         inner_ret = sd_bus_message_read(msg, "s", &key);
@@ -435,25 +602,27 @@ static int method_save_file(sd_bus_message *msg, void *data,
         }
     }
 
+    struct xdptf_state *state = data;
     struct xdptf_request *req =
         xdptf_request_create(sd_bus_message_get_bus(msg), handle);
     if (req == NULL) {
         return -ENOMEM;
     }
 
-    if (current_folder == NULL) {
-        struct xdptf_state *state = data;
-        char *default_dir = state->config->default_dir;
-        if (!default_dir) {
-            logprint(ERROR, "filechooser: default_dir not specified");
-            return -1;
-        }
-        current_folder = default_dir;
+    set_current_folder(&state->config->modes->save_mode,
+                       &state->config->default_dir, &current_folder);
+
+    // existing file
+    char *name = strrchr(current_name, '/');
+    if (name) {
+        current_name = ++name;
     }
 
     size_t path_size = 2 + strlen(current_folder) + strlen(current_name);
     char *path = malloc(path_size);
     snprintf(path, path_size, "%s/%s", current_folder, current_name);
+
+    free(current_folder);
 
     // escape ' with '\'' in path
     char *tmp = path;
@@ -522,6 +691,10 @@ static int method_save_file(sd_bus_message *msg, void *data,
             remove(path);
         }
         free(decoded);
+    }
+
+    if (state->config->modes->save_mode == MODE_LAST_DIR) {
+        set_last_dir(selected_files[num_selected_files - 1]);
     }
 
     sd_bus_message *reply = NULL;

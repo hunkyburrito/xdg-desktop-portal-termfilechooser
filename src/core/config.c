@@ -1,5 +1,6 @@
 #include "config.h"
 #include "logger.h"
+#include <ctype.h>
 #include <ini.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -21,7 +22,7 @@ static char *shell_expand(const char *input)
         expanded_size += 1 + strlen(p.we_wordv[i]);
     }
 
-    if (!expanded_size){
+    if (!expanded_size) {
         return strdup(input);
     }
 
@@ -42,11 +43,9 @@ static char *shell_expand(const char *input)
 void print_config(enum LOGLEVEL loglevel, struct config_filechooser *config)
 {
     logprint(loglevel, "config: cmd:  %s", config->cmd);
-    logprint(loglevel, "config: default_dir:  %s",
-             config->default_dir);
+    logprint(loglevel, "config: default_dir:  %s", config->default_dir);
     for (int i = 0; i < config->env->num_vars; i++) {
-        logprint(loglevel, "config: env:  %s=%s",
-                 config->env->vars[i].name,
+        logprint(loglevel, "config: env:  %s=%s", config->env->vars[i].name,
                  config->env->vars[i].value);
     }
 }
@@ -59,6 +58,7 @@ void free_config(struct config_filechooser *config)
     logprint(DEBUG, "config: freeing config");
     free(config->cmd);
     free(config->default_dir);
+    free(config->modes);
     for (int i = 0; i < config->env->num_vars; i++) {
         free(config->env->vars[i].name);
         free(config->env->vars[i].value);
@@ -70,23 +70,51 @@ void free_config(struct config_filechooser *config)
 static void parse_string(char **dest, const char *value)
 {
     if (value == NULL || *value == '\0') {
-        logprint(TRACE, "config: skipping empty value in config file");
+        logprint(DEBUG, "config: skipping empty value in config file");
         return;
     }
     free(*dest);
     *dest = shell_expand(value);
 }
 
+static void parse_modes(enum Mode *mode, const char *modestr)
+{
+    if (modestr == NULL || *modestr == '\0') {
+        logprint(DEBUG, "config: skipping empty mode in config file");
+        return;
+    }
+
+    char *value = strdup(modestr);
+
+    char *ptr = value;
+    while (*ptr) {
+        *ptr = tolower(*ptr);
+        ptr++;
+    }
+
+    if (strcmp(value, "suggested") == 0) {
+        *mode = MODE_SUGGESTED_DIR;
+    } else if (strcmp(value, "default") == 0) {
+        *mode = MODE_DEFAULT_DIR;
+    } else if (strcmp(value, "last") == 0) {
+        *mode = MODE_LAST_DIR;
+    } else {
+        logprint(DEBUG, "config: skipping unknown mode in config file");
+    }
+
+    free(value);
+}
+
 static void parse_env(struct environment *env, const char *envstr)
 {
     if (envstr == NULL || *envstr == '\0') {
-        logprint(TRACE, "config: skipping env in config file");
+        logprint(DEBUG, "config: skipping empty env in config file");
         return;
     }
 
     char *sep = strchr(envstr, '=');
     if (sep == NULL || sep == envstr) {
-        logprint(TRACE, "config: skipping corrupt env in config file");
+        logprint(DEBUG, "config: skipping corrupt env in config file");
         return;
     }
 
@@ -114,6 +142,10 @@ static int handle_ini_filechooser(struct config_filechooser *filechooser_conf,
         parse_string(&filechooser_conf->cmd, value);
     } else if (strcmp(key, "default_dir") == 0) {
         parse_string(&filechooser_conf->default_dir, value);
+    } else if (strcmp(key, "open_mode") == 0) {
+        parse_modes(&filechooser_conf->modes->open_mode, value);
+    } else if (strcmp(key, "save_mode") == 0) {
+        parse_modes(&filechooser_conf->modes->save_mode, value);
     } else if (strcmp(key, "env") == 0) {
         parse_env(filechooser_conf->env, value);
     } else {
@@ -145,8 +177,10 @@ static bool file_exists(const char *path)
 
 static void set_default_config(struct config_filechooser *config)
 {
-    const char *default_cmd = DATADIR "xdg-desktop-portal-termfilechooser/yazi-wrapper.sh";
-    if (access(default_cmd, F_OK) == 0 && access(default_cmd, R_OK | X_OK) == 0) {
+    const char *default_cmd =
+        DATADIR "/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh";
+    if (access(default_cmd, F_OK) == 0 &&
+        access(default_cmd, R_OK | X_OK) == 0) {
         config->cmd = strdup(default_cmd);
     } else {
         logprint(ERROR, "config: default cmd '%s' is not executable",
@@ -156,6 +190,11 @@ static void set_default_config(struct config_filechooser *config)
     const char *home = getenv("HOME");
     const char *default_dir = home ? home : "/tmp";
     config->default_dir = strdup(default_dir);
+
+    struct modes *default_modes = malloc(sizeof(struct modes));
+    default_modes->open_mode = MODE_SUGGESTED_DIR;
+    default_modes->save_mode = MODE_SUGGESTED_DIR;
+    config->modes = default_modes;
 
     struct environment *env = malloc(sizeof(struct environment));
     env->num_vars = 0;
@@ -243,7 +282,8 @@ static void init_wrapper_path(struct environment *env,
         *config_path = '\0';
     }
 
-    const char *const wrapper_paths = DATADIR "xdg-desktop-portal-termfilechooser";
+    const char *const wrapper_paths =
+        DATADIR "/xdg-desktop-portal-termfilechooser";
 
     const char *sys_path = getenv("PATH");
     if (!sys_path)
