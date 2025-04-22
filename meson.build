@@ -24,15 +24,19 @@ add_project_arguments(
 )
 
 prefix = get_option('prefix')
+datadir = get_option('datadir')
 sysconfdir = get_option('sysconfdir')
+libexecdir = get_option('libexecdir')
 add_project_arguments('-DSYSCONFDIR="@0@"'.format(join_paths(prefix, sysconfdir)), language: 'c')
+add_project_arguments('-DDATADIR="@0@"'.format(join_paths(prefix, datadir)), language: 'c')
 
 inc = include_directories('include')
 
 rt = cc.find_library('rt')
 iniparser = dependency('inih')
+sd_bus_provider = get_option('sd-bus-provider')
 
-if get_option('sd-bus-provider') == 'auto'
+if sd_bus_provider == 'auto'
     assert(
         get_option('auto_features').auto(),
         'sd-bus-provider must not be set to auto since auto_features != auto',
@@ -59,7 +63,7 @@ if get_option('sd-bus-provider') == 'auto'
         error('Neither libsystemd, nor libelogind, nor basu was found')
     endif
 else
-    sdbus = dependency(get_option('sd-bus-provider'))
+    sdbus = dependency(sd_bus_provider)
 endif
 add_project_arguments('-DHAVE_' + sdbus.name().to_upper() + '=1', language: 'c')
 
@@ -82,11 +86,11 @@ executable(
     ],
     include_directories: [inc],
     install: true,
-    install_dir: get_option('libexecdir'),
+    install_dir: libexecdir,
 )
 
 conf_data = configuration_data()
-conf_data.set('libexecdir', join_paths(get_option('prefix'), get_option('libexecdir')))
+conf_data.set('libexecdir', join_paths(prefix, libexecdir))
 conf_data.set('systemd_service', '')
 
 systemd = dependency('systemd', required: get_option('systemd'))
@@ -96,12 +100,12 @@ if systemd.found()
     if meson.version().version_compare('>=51')
         user_unit_dir = systemd.get_variable(
             pkgconfig: 'systemduserunitdir',
-            pkgconfig_define: ['prefix', get_option('prefix')],
+            pkgconfig_define: ['prefix', prefix],
         )
     else
         user_unit_dir = systemd.get_pkgconfig_variable(
             'systemduserunitdir',
-            define_variable: ['prefix', get_option('prefix')],
+            define_variable: ['prefix', prefix],
         )
     endif
     conf_data.set('systemd_service', 'SystemdService=' + systemd_service_file)
@@ -118,17 +122,17 @@ configure_file(
     configuration: conf_data,
     input: 'org.freedesktop.impl.portal.desktop.termfilechooser.service.in',
     output: '@BASENAME@',
-    install_dir: join_paths(get_option('datadir'), 'dbus-1', 'services'),
+    install_dir: join_paths(datadir, 'dbus-1', 'services'),
 )
 
 install_data(
     'termfilechooser.portal',
-    install_dir: join_paths(get_option('datadir'), 'xdg-desktop-portal', 'portals'),
+    install_dir: join_paths(datadir, 'xdg-desktop-portal', 'portals'),
 )
 
 install_subdir(
     'contrib',
-    install_dir: join_paths(get_option('datadir'), 'xdg-desktop-portal-termfilechooser'),
+    install_dir: join_paths(datadir, 'xdg-desktop-portal-termfilechooser'),
     strip_directory: true,
 )
 

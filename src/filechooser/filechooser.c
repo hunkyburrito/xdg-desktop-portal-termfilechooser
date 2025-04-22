@@ -70,13 +70,13 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         // clear contents
         FILE *fp = fopen(filename, "w");
         if (fp == NULL) {
-            logprint(ERROR, "filechooser: could not open '%s' for clearing.");
+            logprint(ERROR, "filechooser: could not open '%s'.");
             free(filename);
             return -1;
         }
         if (fclose(fp) != 0) {
             logprint(ERROR,
-                     "filechooser: could not close '%s' after clearing.");
+                     "filechooser: could not close '%s'.");
             free(filename);
             return -1;
         }
@@ -110,7 +110,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
 
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
-        logprint(ERROR, "filechooser: failed to open '%s' in read mode.",
+        logprint(ERROR, "filechooser: failed to open '%s'.",
                  filename);
         free(filename);
         return -1;
@@ -457,13 +457,13 @@ static int method_save_file(sd_bus_message *msg, void *data,
 
     // escape ' with '\'' in path
     char *tmp = path;
-    size_t escape_size = 0;
+    size_t escaped_size = 0;
     while (*tmp) {
-        escape_size += (*tmp == '\'') ? 4 : 1;
+        escaped_size += (*tmp == '\'') ? 4 : 1;
         tmp++;
     }
-    escape_size += 1;
-    char *escaped_path = malloc(escape_size);
+    escaped_size += 1;
+    char *escaped_path = malloc(escaped_size);
     char *ptr = escaped_path;
     tmp = path;
     while (*tmp) {
@@ -481,7 +481,7 @@ static int method_save_file(sd_bus_message *msg, void *data,
 
     free(path);
     path = escaped_path;
-    path_size = escape_size;
+    path_size = escaped_size;
 
     while (access(path, F_OK) == 0) {
         char *path_tmp = malloc(path_size);
@@ -496,7 +496,7 @@ static int method_save_file(sd_bus_message *msg, void *data,
     size_t num_selected_files = 0;
 
     FILE *temp_file = fopen(path, "w");
-    if (!temp_file) {
+    if (temp_file == NULL) {
         logprint(ERROR, "filechooser: could not write temporary file");
         return -1;
     }

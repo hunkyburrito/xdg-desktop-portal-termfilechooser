@@ -145,18 +145,16 @@ static bool file_exists(const char *path)
 
 static void set_default_config(struct config_filechooser *config)
 {
-    const char *home = getenv("HOME");
-
-    const char *default_cmd = "yazi-wrapper.sh";
-    const char *default_dir = home ? home : "/tmp";
-
-    if (access(default_cmd, F_OK) && access(default_cmd, R_OK | X_OK)) {
+    const char *default_cmd = DATADIR "xdg-desktop-portal-termfilechooser/yazi-wrapper.sh";
+    if (access(default_cmd, F_OK) == 0 && access(default_cmd, R_OK | X_OK) == 0) {
         config->cmd = strdup(default_cmd);
     } else {
         logprint(ERROR, "config: default cmd '%s' is not executable",
                  default_cmd);
     }
 
+    const char *home = getenv("HOME");
+    const char *default_dir = home ? home : "/tmp";
     config->default_dir = strdup(default_dir);
 
     struct environment *env = malloc(sizeof(struct environment));
@@ -245,9 +243,7 @@ static void init_wrapper_path(struct environment *env,
         *config_path = '\0';
     }
 
-    const char *const wrapper_paths =
-        "/usr/local/share/xdg-desktop-portal-termfilechooser:/usr/share/"
-        "xdg-desktop-portal-termfilechooser";
+    const char *const wrapper_paths = DATADIR "xdg-desktop-portal-termfilechooser";
 
     const char *sys_path = getenv("PATH");
     if (!sys_path)
