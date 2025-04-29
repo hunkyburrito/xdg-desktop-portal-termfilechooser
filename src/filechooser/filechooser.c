@@ -624,7 +624,28 @@ static int method_save_file(sd_bus_message *msg, void *data,
 
     free(current_folder);
 
+    while (access(path, F_OK) == 0) {
+        char *path_tmp = malloc(path_size);
+        snprintf(path_tmp, path_size, "%s", path);
+        path_size += 1;
+        path = realloc(path, path_size);
+        snprintf(path, path_size, "%s_", path_tmp);
+        free(path_tmp);
+    }
+
+    char **selected_files = NULL;
+    size_t num_selected_files = 0;
+
+    FILE *temp_file = fopen(path, "w");
+    if (temp_file == NULL) {
+        logprint(ERROR, "filechooser: could not write temporary file");
+        return -1;
+    }
+    fputs(instructions, temp_file);
+    fclose(temp_file);
+
     // escape ' with '\'' in path
+    // only needed for exec_filechooser()
     char *tmp = path;
     size_t escaped_size = 0;
     while (*tmp) {
@@ -648,31 +669,7 @@ static int method_save_file(sd_bus_message *msg, void *data,
     }
     *ptr = '\0';
 
-    free(path);
-    path = escaped_path;
-    path_size = escaped_size;
-
-    while (access(path, F_OK) == 0) {
-        char *path_tmp = malloc(path_size);
-        snprintf(path_tmp, path_size, "%s", path);
-        path_size += 1;
-        path = realloc(path, path_size);
-        snprintf(path, path_size, "%s_", path_tmp);
-        free(path_tmp);
-    }
-
-    char **selected_files = NULL;
-    size_t num_selected_files = 0;
-
-    FILE *temp_file = fopen(path, "w");
-    if (temp_file == NULL) {
-        logprint(ERROR, "filechooser: could not write temporary file");
-        return -1;
-    }
-    fputs(instructions, temp_file);
-    fclose(temp_file);
-
-    ret = exec_filechooser(data, true, false, false, path, &selected_files,
+    ret = exec_filechooser(data, true, false, false, escaped_path, &selected_files,
                            &num_selected_files);
 
     if (ret || num_selected_files == 0) {
@@ -760,6 +757,7 @@ cleanup:
         free(selected_files[i]);
     }
     free(selected_files);
+    free(escaped_path);
     free(path);
 
     xdptf_request_destroy(req);
