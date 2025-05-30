@@ -41,7 +41,7 @@
 
     yay -S xdg-desktop-portal-termfilechooser-hunkyburrito-git
 
-[NixOS (unstable)](https://github.com/NixOS/nixpkgs/tree/nixos-unstable/pkgs/by-name/xd/xdg-desktop-portal-termfilechooser)
+[NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name/xd/xdg-desktop-portal-termfilechooser)
 
 ### Building from source
 
