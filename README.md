@@ -264,6 +264,11 @@ If your version is older, you can remove `FileChooser` from `Interfaces` of the 
 
 - Ensure you are on the most up-to-date version of `termfilechooser`. The version can be checked by running `/usr/local/lib/xdg-desktop-portal-termfilechooser -v` (correct path as needed).
 
+4. Terminal File Manager does not work with "Open/Show Folder" dialogs
+
+- This is expected behavior. Currently termfilechooser only works for selecting files and folders for downloading/uploading. Dialogs, like the one mentioned, use a different interface - https://www.freedesktop.org/wiki/Specifications/file-manager-interface.
+- To get this functionality you can use https://github.com/boydaihungst/org.freedesktop.FileManager1.common
+
 See also: [Troubleshooting section in ArchWiki](https://wiki.archlinux.org/title/XDG_Desktop_Portal#Troubleshooting).
 
 If the above do not help, please continue troubleshooting and submit an issue/PR about the problem.
