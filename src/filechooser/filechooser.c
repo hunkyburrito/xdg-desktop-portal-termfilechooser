@@ -612,9 +612,13 @@ static int method_save_file(sd_bus_message *msg, void *data,
     set_current_folder(&state->config->modes->save_mode,
                        &state->config->default_dir, &current_folder);
 
+    if (current_name == NULL || *current_name == '\0') {
+        current_name = "termfilechooser.tmp";
+    }
+
     // existing file
     char *name = strrchr(current_name, '/');
-    if (name) {
+    if (name && *(name + 1) != '\0') {
         current_name = ++name;
     }
 
@@ -669,8 +673,8 @@ static int method_save_file(sd_bus_message *msg, void *data,
     }
     *ptr = '\0';
 
-    ret = exec_filechooser(data, true, false, false, escaped_path, &selected_files,
-                           &num_selected_files);
+    ret = exec_filechooser(data, true, false, false, escaped_path,
+                           &selected_files, &num_selected_files);
 
     if (ret || num_selected_files == 0) {
         remove(path);
