@@ -616,10 +616,13 @@ static int method_save_file(sd_bus_message *msg, void *data,
         current_name = "termfilechooser.tmp";
     }
 
-    // existing file
     char *name = strrchr(current_name, '/');
-    if (name && *(name + 1) != '\0') {
-        current_name = ++name;
+    if (name) {
+        if (*(name + 1) != '\0') {
+            current_name = ++name;
+        } else {
+            current_name = "termfilechooser.tmp";
+        }
     }
 
     size_t path_size = 2 + strlen(current_folder) + strlen(current_name);
