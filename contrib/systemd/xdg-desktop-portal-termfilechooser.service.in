@@ -8,3 +8,4 @@ Type=dbus
 BusName=org.freedesktop.impl.portal.desktop.termfilechooser
 ExecStart=@libexecdir@/xdg-desktop-portal-termfilechooser
 Restart=on-failure
+Slice=session.slice
