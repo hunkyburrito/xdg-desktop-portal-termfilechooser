@@ -180,6 +180,7 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     (*selected_files)[num_lines] = NULL;
 
     fclose(fp);
+    remove(filename);
     free(filename);
     return 0;
 }
