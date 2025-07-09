@@ -24,6 +24,7 @@ struct modes {
 struct config_filechooser {
     char *cmd;
     char *default_dir;
+    char create_help_file;
     struct modes *modes;
     struct environment *env;
 };

@@ -91,6 +91,13 @@ These options need to be placed under the *[filechooser]* section.
 
 	The default value is yazi-wrapper.sh
 
+*create_help_file* = _bool_
+	Populates the destination save file with instructions.
+
+	Accepted values are *0* and *1*.
+
+	The default value is *1*.
+
 *default_dir* = _directory_
 	Default directory to open in your file manager if the invoking program does not
 	provide one.
@@ -130,6 +137,7 @@ _last_ - Uses the parent directory of the last selected file. If the last
 ```
 [filechooser]
 cmd=yazi-wrapper.sh
+create_help_file=0
 default_dir=$HOME
 env=TERMCMD=foot
 	EDITOR=nvim
