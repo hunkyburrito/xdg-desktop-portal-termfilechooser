@@ -626,31 +626,33 @@ static int method_save_file(sd_bus_message *msg, void *data,
         }
     }
 
+    size_t num_selected_files = 0;
     size_t path_size = 2 + strlen(current_folder) + strlen(current_name);
+    char **selected_files = NULL;
     char *path = malloc(path_size);
     snprintf(path, path_size, "%s/%s", current_folder, current_name);
 
     free(current_folder);
 
-    while (access(path, F_OK) == 0) {
-        char *path_tmp = malloc(path_size);
-        snprintf(path_tmp, path_size, "%s", path);
-        path_size += 1;
-        path = realloc(path, path_size);
-        snprintf(path, path_size, "%s_", path_tmp);
-        free(path_tmp);
-    }
+    if (state->config->create_help_file == 1) {
+        while (access(path, F_OK) == 0) {
+            char *path_tmp = malloc(path_size);
+            //snprintf(path_tmp, path_size, "%s", path);
+            memcpy(path_tmp, path, path_size);
+            path_size += 1;
+            path = realloc(path, path_size);
+            snprintf(path, path_size, "%s_", path_tmp);
+            free(path_tmp);
+        }
 
-    char **selected_files = NULL;
-    size_t num_selected_files = 0;
-
-    FILE *temp_file = fopen(path, "w");
-    if (temp_file == NULL) {
-        logprint(ERROR, "filechooser: could not write temporary file");
-        return -1;
+        FILE *temp_file = fopen(path, "w");
+        if (temp_file == NULL) {
+            logprint(ERROR, "filechooser: could not write temporary file");
+            return -1;
+        }
+        fputs(instructions, temp_file);
+        fclose(temp_file);
     }
-    fputs(instructions, temp_file);
-    fclose(temp_file);
 
     // escape ' with '\'' in path
     // only needed for exec_filechooser()
@@ -681,21 +683,28 @@ static int method_save_file(sd_bus_message *msg, void *data,
                            &selected_files, &num_selected_files);
 
     if (ret || num_selected_files == 0) {
-        remove(path);
+        // read as 'if file_exists' - do not delete file we didn't touch
+        if (state->config->create_help_file == 1) {
+            remove(path);
+        }
         goto cleanup;
     }
 
     logprint(TRACE, "filechooser: (SaveFile) Number of selected files: %d",
              num_selected_files);
-    char *decoded = NULL;
-    for (size_t i = 0; i < num_selected_files; i++) {
-        logprint(TRACE, "filechooser: %d. %s", i, selected_files[i]);
-        decoded = malloc(1 + strlen(selected_files[i]));
-        uri_decode(selected_files[i], strlen(selected_files[i]), decoded);
-        if (decoded && strcmp(decoded + strlen(PATH_PREFIX), path) != 0) {
-            remove(path);
+
+    // read as 'if file_exists' - do not delete file we didn't touch
+    if (state->config->create_help_file == 1) {
+        char *decoded = NULL;
+        for (size_t i = 0; i < num_selected_files; i++) {
+            logprint(TRACE, "filechooser: %d. %s", i, selected_files[i]);
+            decoded = malloc(1 + strlen(selected_files[i]));
+            uri_decode(selected_files[i], strlen(selected_files[i]), decoded);
+            if (decoded && strcmp(decoded + strlen(PATH_PREFIX), path) != 0) {
+                remove(path);
+            }
+            free(decoded);
         }
-        free(decoded);
     }
 
     if (state->config->modes->save_mode == MODE_LAST_DIR) {

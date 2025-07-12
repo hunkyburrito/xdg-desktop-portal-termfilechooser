@@ -77,6 +77,30 @@ static void parse_string(char **dest, const char *value)
     *dest = shell_expand(value);
 }
 
+static void parse_bool(char *dest, const char *strval)
+{
+    if (strval == NULL || *strval == '\0') {
+        logprint(DEBUG, "config: skipping empty value in config file");
+        return;
+    }
+
+    char *value = strdup(strval);
+
+    char *ptr = value;
+    while (*ptr) {
+        *ptr = tolower(*ptr);
+        ptr++;
+    }
+
+    if (strcmp(value, "0") == 0) {
+        *dest = 0;
+    } else if (strcmp(value, "1") == 0) {
+        *dest = 1;
+    } else {
+        logprint(DEBUG, "config: unknown bool in config file");
+    }
+}
+
 static void parse_modes(enum Mode *mode, const char *modestr)
 {
     if (modestr == NULL || *modestr == '\0') {
@@ -142,6 +166,8 @@ static int handle_ini_filechooser(struct config_filechooser *filechooser_conf,
         parse_string(&filechooser_conf->cmd, value);
     } else if (strcmp(key, "default_dir") == 0) {
         parse_string(&filechooser_conf->default_dir, value);
+    } else if (strcmp(key, "create_help_file") == 0) {
+        parse_bool(&filechooser_conf->create_help_file, value);
     } else if (strcmp(key, "open_mode") == 0) {
         parse_modes(&filechooser_conf->modes->open_mode, value);
     } else if (strcmp(key, "save_mode") == 0) {
@@ -195,6 +221,8 @@ static void set_default_config(struct config_filechooser *config)
     default_modes->open_mode = MODE_SUGGESTED_DIR;
     default_modes->save_mode = MODE_SUGGESTED_DIR;
     config->modes = default_modes;
+
+    config->create_help_file = 1;
 
     struct environment *env = malloc(sizeof(struct environment));
     env->num_vars = 0;

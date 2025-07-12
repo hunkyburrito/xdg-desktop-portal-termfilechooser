@@ -88,6 +88,7 @@ The configuration is as follows:
 `[filechooser]`
 
 - `cmd`: The wrapper script/command to run.
+- `create_help_file`: Create destination save file with instructions. Must be *0* or *1* (default). See `man 5 xdg-desktop-portal-termfilechooser` for more info.
 - `default_dir`: The default directory to open if the application (e.g. firefox) does not suggest a path.
 - `env`: Sets the specified environment variables with the specified values.
     - `TERMCMD`: The environment variable that sets what command to use for launching a terminal.
