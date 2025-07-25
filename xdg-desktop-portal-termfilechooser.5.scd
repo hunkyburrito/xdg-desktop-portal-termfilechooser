@@ -65,6 +65,11 @@ files.
 *Position*: Argument 5++
 *Value*: string < file path >
 
+*Name*: _N/A_ ++
+*Description*: The loglevel set for termfilechooser.++
+*Position*: Argument 6++
+*Vaule*: int
+
 # FILECHOOSER CONFIGURATION
 
 The configuration file uses the INI file format. The only implemented section is

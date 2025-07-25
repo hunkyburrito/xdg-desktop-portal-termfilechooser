@@ -59,11 +59,11 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     snprintf(filename, filename_size, "%s-%u.portal", PATH_PORTAL_BASE, uid);
 
     size_t str_size =
-        1 + snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\'", cmd_script, multiple,
-                     directory, writing, path, filename);
+        1 + snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\' %d", cmd_script, multiple,
+                     directory, writing, path, filename, get_logger_level());
     char *cmd = malloc(str_size);
-    snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\'", cmd_script, multiple,
-             directory, writing, path, filename);
+    snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\' %d", cmd_script, multiple,
+             directory, writing, path, filename, get_logger_level());
 
     struct environment *env = state->config->env;
 

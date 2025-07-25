@@ -3,7 +3,11 @@
 #
 # For more information about input/output arguments read `xdg-desktop-portal-termfilechooser(5)`
 
-set -ex
+set -e
+
+if [ "$6" -ge 4 ]; then
+    set -x
+fi
 
 multiple="$1"
 directory="$2"
