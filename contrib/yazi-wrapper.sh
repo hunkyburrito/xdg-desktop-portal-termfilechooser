@@ -19,7 +19,7 @@ if [ "$save" = "1" ]; then
     set -- --chooser-file="$out" "$path"
 elif [ "$directory" = "1" ]; then
     # upload files from a directory
-    set -- --chooser-file="$out" --cwd-file="$out" "$path"
+    set -- --chooser-file="$out" --cwd-file="$out"".1" "$path"
 elif [ "$multiple" = "1" ]; then
     # upload multiple files
     set -- --chooser-file="$out" "$path"
@@ -37,3 +37,11 @@ for arg in "$@"; do
 done
 
 sh -c "$command"
+
+if [ "$directory" = "1" ] &&
+    [ ! -s "$out" ] &&
+    [ -s "$out"".1" ];
+then
+    cat "$out"".1" > "$out"
+    rm "$out"".1"
+fi

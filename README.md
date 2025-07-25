@@ -219,6 +219,8 @@ Directory selection can vary depending on the file manager, however. Most file m
 | [vifm]       | yes              | yes              |
 | [yazi]       | yes              | yes              |
 
+Note: File managers that use "Quit" Selection often have a keybind or command to abort the selection process. For example, in [yazi] it is 'Q'.
+
 ### Tips
 
 #### Firefox
