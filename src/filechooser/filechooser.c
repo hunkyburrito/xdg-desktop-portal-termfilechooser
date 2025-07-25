@@ -73,11 +73,13 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         if (fp == NULL) {
             logprint(ERROR, "filechooser: could not open '%s'", filename);
             free(filename);
+            free(cmd);
             return -1;
         }
         if (fclose(fp) != 0) {
             logprint(ERROR, "filechooser: could not close '%s'", filename);
             free(filename);
+            free(cmd);
             return -1;
         }
     }
@@ -103,6 +105,8 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
             logprint(ERROR, "filechooser: could not execute '%s': exit code %d",
                      cmd, -ret / 256);
         }
+        remove(filename);
+        free(filename);
         free(cmd);
         return -1;
     }
@@ -128,6 +132,8 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
 
         if (ferror(fp)) {
             fclose(fp);
+            remove(filename);
+            free(filename);
             return -1;
         }
     }
@@ -139,11 +145,15 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     // rewind
     if (fseek(fp, 0, SEEK_SET) != 0) {
         fclose(fp);
+        remove(filename);
+        free(filename);
         return -1;
     }
 
     if (num_lines == 0) {
         fclose(fp);
+        remove(filename);
+        free(filename);
         return -1;
     }
 
@@ -162,6 +172,8 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
             }
             free(*selected_files);
             fclose(fp);
+            remove(filename);
+            free(filename);
             return -1;
         }
         // if all chars are encoded, size = orig_size * 3 + 1
@@ -204,9 +216,11 @@ static char *get_last_dir_path(void)
         snprintf(path, path_size, "%s/.local/state/%s", home, file_path);
     }
 
-    struct stat st = {0};
-    if (stat(path, &st) == -1) {
-        mkdir(path, 0755);
+    if (path) {
+        struct stat st = {0};
+        if (stat(path, &st) == -1) {
+            mkdir(path, 0755);
+        }
     }
 
     return path;
@@ -215,6 +229,10 @@ static char *get_last_dir_path(void)
 static char *read_last_dir(void)
 {
     char *path = get_last_dir_path();
+    if (path == NULL) {
+        return NULL;
+    }
+
     char *filename = NULL;
 
     size_t filename_size = 1 + snprintf(NULL, 0, "%s/last_dir", path);
@@ -263,6 +281,10 @@ static void write_last_dir(char *last_dir)
         return;
 
     char *path = get_last_dir_path();
+    if (path == NULL) {
+        return;
+    }
+
     char *filename = NULL;
 
     size_t filename_size = 1 + snprintf(NULL, 0, "%s/last_dir", path);
@@ -300,6 +322,8 @@ static void set_last_dir(char *encoded_selection)
             logprint(ERROR, "filechooser: failed to stat '%s': %s",
                      last_selected, strerror(errno));
         }
+        free(last_selected);
+        return;
     }
 
     if (S_ISDIR(path_stat.st_mode)) {
