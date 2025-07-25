@@ -282,13 +282,14 @@ When termfilechooser runs as a `systemd` service, it's output can be viewed with
 
     journalctl --user -eu xdg-desktop-portal-termfilechooser
 
-Sometimes it's useful to set a higher level of logging. Running the program manually makes this much easier.
+The available logging levels in order of increasing verbosity are: `QUIET`, `ERROR`, `WARN`(default), `INFO`, `DEBUG`, and `TRACE`.
+Running the program manually allows you to change the logging level much easier.
 
 Note: Correct the binary path as necessary.
 
-    /usr/local/lib/xdg-desktop-portal-termfilechooser -r -l TRACE
+    /usr/local/lib/xdg-desktop-portal-termfilechooser -r -l DEBUG
 
-Set the logging level and then try problematic actions again to (hopefully) get more useful log output.
+After running this command, try the problematic actions again and you should see more information on what is going wrong.
 
 ### Testing
 
