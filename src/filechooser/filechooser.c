@@ -363,7 +363,7 @@ static void set_current_folder(enum Mode *mode, char **default_dir,
             break;
     }
 
-    if (*current_folder == NULL || access(*current_folder, F_OK)) {
+    if (*current_folder == NULL) {
         if (*default_dir != NULL) {
             *current_folder = strdup(*default_dir);
             logprint(
@@ -373,7 +373,21 @@ static void set_current_folder(enum Mode *mode, char **default_dir,
         } else {
             logprint(WARN, "filechooser: could not set current_folder");
         }
+    } else if (access(*current_folder, F_OK)) {
+        if (*mode != MODE_DEFAULT_DIR && *default_dir != NULL) {
+            free(*current_folder);
+            *current_folder = strdup(*default_dir);
+            logprint(
+                DEBUG,
+                "filechooser: could not set current_folder; fallback to '%s'",
+                *current_folder);
+        } else {
+            free(*current_folder);
+            *current_folder = NULL;
+            logprint(WARN, "filechooser: could not set current_folder");
+        }
     }
+
 }
 
 static int method_open_file(sd_bus_message *msg, void *data,
