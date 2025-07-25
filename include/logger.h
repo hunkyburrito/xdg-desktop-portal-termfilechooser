@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#define DEFAULT_LOGLEVEL ERROR
+#define DEFAULT_LOGLEVEL WARN
 
 enum LOGLEVEL { QUIET, ERROR, WARN, INFO, DEBUG, TRACE };
 

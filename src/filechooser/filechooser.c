@@ -483,10 +483,10 @@ static int method_open_file(sd_bus_message *msg, void *data,
         goto cleanup;
     }
 
-    logprint(TRACE, "filechooser: (OpenFile) Number of selected files: %d",
+    logprint(INFO, "filechooser: (OpenFile) Number of selected files: %d",
              num_selected_files);
     for (size_t i = 0; i < num_selected_files; i++) {
-        logprint(TRACE, "filechooser: %d. %s", i, selected_files[i]);
+        logprint(DEBUG, "filechooser: %d. %s", i, selected_files[i]);
     }
 
     if (state->config->modes->open_mode == MODE_LAST_DIR) {
@@ -728,14 +728,14 @@ static int method_save_file(sd_bus_message *msg, void *data,
         goto cleanup;
     }
 
-    logprint(TRACE, "filechooser: (SaveFile) Number of selected files: %d",
+    logprint(INFO, "filechooser: (SaveFile) Number of selected files: %d",
              num_selected_files);
 
     // read as 'if file_exists' - do not delete file we didn't touch
     if (state->config->create_help_file == 1) {
         char *decoded = NULL;
         for (size_t i = 0; i < num_selected_files; i++) {
-            logprint(TRACE, "filechooser: %d. %s", i, selected_files[i]);
+            logprint(DEBUG, "filechooser: %d. %s", i, selected_files[i]);
             decoded = malloc(1 + strlen(selected_files[i]));
             uri_decode(selected_files[i], strlen(selected_files[i]), decoded);
             if (decoded && strcmp(decoded + strlen(PATH_PREFIX), path) != 0) {
