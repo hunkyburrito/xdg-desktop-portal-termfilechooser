@@ -36,8 +36,13 @@ command="$termcmd $cmd"
 for arg in "$@"; do
     # escape double quotes
     escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
-    # escape spaces
-    command="$command \"$escaped\""
+    # escape special
+    case "$termcmd" in
+	*"ghostty"*)
+	    command="$command \"\\\"$escaped\\\"\"";;
+	*)
+	    command="$command \"$escaped\"";;
+    esac
 done
 
 if [ "$directory" = "1" ]; then
