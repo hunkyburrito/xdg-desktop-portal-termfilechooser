@@ -47,10 +47,11 @@ done
 
 sh -c "$command"
 
-if [ "$directory" = "1" ] &&
-    [ ! -s "$out" ] &&
-    [ -s "$out"".1" ];
-then
-    cat "$out"".1" > "$out"
-    rm "$out"".1"
+if [ "$directory" = "1" ]; then
+    if [ ! -s "$out" ] && [ -s "$out"".1" ]; then
+        cat "$out"".1" > "$out"
+        rm "$out"".1"
+    else
+        rm "$out"".1"
+    fi
 fi
