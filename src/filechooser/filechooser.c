@@ -58,12 +58,12 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     char *filename = malloc(filename_size);
     snprintf(filename, filename_size, "%s-%u.portal", PATH_PORTAL_BASE, uid);
 
-    size_t str_size =
-        1 + snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\' %d", cmd_script, multiple,
-                     directory, writing, path, filename, get_logger_level());
+    size_t str_size = 1 + snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\' %d",
+                                   cmd_script, multiple, directory, writing,
+                                   path, filename, get_logger_level());
     char *cmd = malloc(str_size);
-    snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\' %d", cmd_script, multiple,
-             directory, writing, path, filename, get_logger_level());
+    snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\' %d", cmd_script,
+             multiple, directory, writing, path, filename, get_logger_level());
 
     struct environment *env = state->config->env;
 
@@ -387,7 +387,6 @@ static void set_current_folder(enum Mode *mode, char **default_dir,
             logprint(WARN, "filechooser: could not set current_folder");
         }
     }
-
 }
 
 static int method_open_file(sd_bus_message *msg, void *data,
@@ -675,7 +674,6 @@ static int method_save_file(sd_bus_message *msg, void *data,
     if (state->config->create_help_file == 1) {
         while (access(path, F_OK) == 0) {
             char *path_tmp = malloc(path_size);
-            //snprintf(path_tmp, path_size, "%s", path);
             memcpy(path_tmp, path, path_size);
             path_size += 1;
             path = realloc(path, path_size);
@@ -721,7 +719,7 @@ static int method_save_file(sd_bus_message *msg, void *data,
                            &selected_files, &num_selected_files);
 
     if (ret || num_selected_files == 0) {
-        // read as 'if file_exists' - do not delete file we didn't touch
+        // if file created
         if (state->config->create_help_file == 1) {
             remove(path);
         }
@@ -731,14 +729,30 @@ static int method_save_file(sd_bus_message *msg, void *data,
     logprint(INFO, "filechooser: (SaveFile) Number of selected files: %d",
              num_selected_files);
 
-    // read as 'if file_exists' - do not delete file we didn't touch
+    // if file created
     if (state->config->create_help_file == 1) {
         char *decoded = NULL;
         for (size_t i = 0; i < num_selected_files; i++) {
             logprint(DEBUG, "filechooser: %d. %s", i, selected_files[i]);
             decoded = malloc(1 + strlen(selected_files[i]));
             uri_decode(selected_files[i], strlen(selected_files[i]), decoded);
-            if (decoded && strcmp(decoded + strlen(PATH_PREFIX), path) != 0) {
+
+            struct stat statbuf;
+            if (stat(decoded + strlen(PATH_PREFIX), &statbuf) == 0) {
+                if (S_ISDIR(statbuf.st_mode)) {
+                    logprint(ERROR,
+                             "filechooser: selected SaveFile is a directory");
+                    free(decoded);
+                    goto cleanup;
+                }
+            } else {
+                logprint(ERROR, "filechooser: failed to stat '%s': %s",
+                         decoded + strlen(PATH_PREFIX), strerror(errno));
+                free(decoded);
+                goto cleanup;
+            }
+
+            if (strcmp(decoded + strlen(PATH_PREFIX), path) != 0) {
                 remove(path);
             }
             free(decoded);
