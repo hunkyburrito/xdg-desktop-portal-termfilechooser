@@ -718,45 +718,46 @@ static int method_save_file(sd_bus_message *msg, void *data,
     ret = exec_filechooser(data, true, false, false, escaped_path,
                            &selected_files, &num_selected_files);
 
-    if (ret || num_selected_files == 0) {
+    logprint(INFO, "filechooser: (SaveFile) Number of selected files: %d",
+             num_selected_files);
+
+    if (ret || num_selected_files != 1) {
         // if file created
         if (state->config->create_help_file == 1) {
             remove(path);
         }
+        if (num_selected_files > 1) {
+            logprint(ERROR, "filechooser: too many selected SaveFiles");
+        }
         goto cleanup;
     }
-
-    logprint(INFO, "filechooser: (SaveFile) Number of selected files: %d",
-             num_selected_files);
 
     // if file created
     if (state->config->create_help_file == 1) {
         char *decoded = NULL;
-        for (size_t i = 0; i < num_selected_files; i++) {
-            logprint(DEBUG, "filechooser: %d. %s", i, selected_files[i]);
-            decoded = malloc(1 + strlen(selected_files[i]));
-            uri_decode(selected_files[i], strlen(selected_files[i]), decoded);
+        logprint(DEBUG, "filechooser: %s", selected_files[0]);
+        decoded = malloc(1 + strlen(selected_files[0]));
+        uri_decode(selected_files[0], strlen(selected_files[0]), decoded);
 
-            struct stat statbuf;
-            if (stat(decoded + strlen(PATH_PREFIX), &statbuf) == 0) {
-                if (S_ISDIR(statbuf.st_mode)) {
-                    logprint(ERROR,
-                             "filechooser: selected SaveFile is a directory");
-                    free(decoded);
-                    goto cleanup;
-                }
-            } else {
-                logprint(ERROR, "filechooser: failed to stat '%s': %s",
-                         decoded + strlen(PATH_PREFIX), strerror(errno));
+        struct stat statbuf;
+        if (stat(decoded + strlen(PATH_PREFIX), &statbuf) == 0) {
+            if (S_ISDIR(statbuf.st_mode)) {
+                logprint(ERROR,
+                         "filechooser: selected SaveFile is a directory");
                 free(decoded);
                 goto cleanup;
             }
-
-            if (strcmp(decoded + strlen(PATH_PREFIX), path) != 0) {
-                remove(path);
-            }
+        } else {
+            logprint(ERROR, "filechooser: failed to stat '%s': %s",
+                     decoded + strlen(PATH_PREFIX), strerror(errno));
             free(decoded);
+            goto cleanup;
         }
+
+        if (strcmp(decoded + strlen(PATH_PREFIX), path) != 0) {
+            remove(path);
+        }
+        free(decoded);
     }
 
     if (state->config->modes->save_mode == MODE_LAST_DIR) {
