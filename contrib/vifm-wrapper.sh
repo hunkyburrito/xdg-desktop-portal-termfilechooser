@@ -39,12 +39,7 @@ for arg in "$@"; do
     # escape double quotes
     escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
     # escape special
-    case "$termcmd" in
-	*"ghostty"*)
-	    command="$command \"\\\"$escaped\\\"\"";;
-	*)
-	    command="$command \"$escaped\"";;
-    esac
+    command="$command \"$escaped\""
 done
 
 sh -c "$command"
