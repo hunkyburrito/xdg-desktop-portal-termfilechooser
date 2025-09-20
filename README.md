@@ -262,7 +262,7 @@ If your version is older, you can remove `FileChooser` from `Interfaces` of the 
 
 - For GTK applications, try setting the `GDK_DEBUG=portals` environment variable when running the problematic application. If that doesn't help, try using the [deprecated](https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/4829) `GTK_USE_PORTAL=1` instead.
 - For electron applications, try using a package built against a newer electron version. Older electron versions do not support the filechooser portal, and some versions have broken support (see https://github.com/electron/electron/issues/43819).
-- For Qt applications, try setting `QT_QPA_PLATFORMTHEME=flatpak` or `QT_QPA_PLATFORMTHEME=xdgdesktopportal` when running the application.
+- For Qt applications, try setting `QT_QPA_PLATFORMTHEME=flatpak` or `QT_QPA_PLATFORMTHEME=xdgdesktopportal` when running the application. Alternatively, you can just set the dialogs to `XDG Desktop Portal` within the `qt5ct/qt6ct` configuration programs to preserve your theme settings.
 
 3. Outdated version
 
