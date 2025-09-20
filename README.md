@@ -312,7 +312,7 @@ Directory selection test:
 
 Save test:
 
-    GDK_DEBUG=portals zenity --file-selection --save --filename=test.txt
+    GDK_DEBUG=portals zenity --file-selection --save --filename='$HOME/test.txt'
 
 ## Documentation
 
