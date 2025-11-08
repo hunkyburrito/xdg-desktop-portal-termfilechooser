@@ -43,6 +43,11 @@
 
 [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name/xd/xdg-desktop-portal-termfilechooser)
 
+[Fedora (COPR)](https://copr.fedorainfracloud.org/coprs/mo-k12/personal/package/xdg-desktop-portal-termfilechooser/)
+
+    sudo dnf copr enable mo-k12/personal
+    sudo dnf install xdg-desktop-portal-termfilechooser
+
 ### Building from source
 
 #### Download source
