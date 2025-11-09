@@ -1,3 +1,4 @@
+
 # xdg-desktop-portal-termfilechooser
 
 [xdg-desktop-portal] backend for choosing files with your favorite terminal file manager.
@@ -37,9 +38,13 @@
 
 ### Packages
 
+#### Official:
+
 [Arch Linux (AUR)](https://aur.archlinux.org/packages/xdg-desktop-portal-termfilechooser-hunkyburrito-git)
 
     yay -S xdg-desktop-portal-termfilechooser-hunkyburrito-git
+
+#### Contributed:
 
 [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name/xd/xdg-desktop-portal-termfilechooser)
 
