@@ -41,12 +41,10 @@ jobs:
           fi
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2;
         with:
           generate_release_notes: false
           body_path: CHANGELOG.md
-          prerelease: ${{ contains(github.ref_name, 'beta') || \
-                          contains(github.ref_name, 'alpha') || \
-                          contains(github.ref_name, 'rc') }};
+          prerelease: false
           draft: true
           name: "Release ${{ github.ref_name }}"
