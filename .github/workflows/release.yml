@@ -16,10 +16,37 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Changelog
+        run: |
+          # Previous tag
+          PREV_TAG=$(git describe --tags --abrrev=0 HEAD^ 2>/dev/null || \
+                    echo "")
+
+          echo "# Changes in ${{ github.ref_name }}" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "## Commits since $PREV_TAG:" >> CHANGELOG.md
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD >> CHANGELOG.md
+          else
+            echo "## All commits:" >> CHANGELOG.md
+            git log --pretty=format:"- %s (%h)" >> CHANGELOG.md
+          fi
+
+          if [ -f "BREAKING.md" ]; then
+            echo "" >> CHANGELOG.md
+            echo "## !!! BREAKING CHANGES !!!" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
-          prerelease: false
+          generate_release_notes: false
+          body_path: CHANGELOG.md
+          prerelease: ${{ contains(github.ref_name, 'beta') || \
+                          contains(github.ref_name, 'alpha') || \
+                          contains(github.ref_name, 'rc') }};
           draft: true
           name: "Release ${{ github.ref_name }}"
