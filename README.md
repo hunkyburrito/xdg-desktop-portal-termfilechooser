@@ -121,9 +121,9 @@ Setting `TERMCMD` can be done with the following methods (in recommended order):
 
 ### Examples
 
-#### Using `env`:
+Note: Be sure to properly quote and escape `TERMCMD` as seen in examples below.
 
-Note: Setting environment variables in the config with `env` does not require you to quote the entire value. See example below.
+#### Using `env`:
 
 ```conf
 ### $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config ###
@@ -131,7 +131,7 @@ Note: Setting environment variables in the config with `env` does not require yo
 [filechooser]
 cmd=yazi-wrapper.sh
 default_dir=$HOME
-env=TERMCMD=foot -T "terminal filechooser"
+env=TERMCMD='foot -T "terminal filechooser"'
     VARIABLE2=VALUE2
 open_mode = suggested
 save_mode = last
@@ -155,8 +155,6 @@ Environment variables can also be unset. (e.g. `env=VARIABLE=`)
 
 #### Editing `cmd`:
 
-Note: Setting environment variables through prepending requires proper quoting and necessary escaping. See example below.
-
 ```conf
 ### $XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/config ###
 
@@ -168,8 +166,6 @@ save_mode = last
 ```
 
 #### Exporting a global:
-
-Note: Setting `TERMCMD` globally requires proper quoting and necessary escaping. See example below.
 
 ```sh
 ### $HOME/.profile, .bashrc, or equivalent ###
@@ -188,8 +184,8 @@ Make your changes, then:
 
 [filechooser]
 # prioritizes `yazi-wrapper.sh` in `$XDG_CONFIG_HOME` dir over `/usr/local/share` and `/usr/share` dirs
-cmd=yazi-wrapper.sh
-default_dir=$HOME
+cmd = yazi-wrapper.sh
+default_dir = $HOME
 open_mode = suggested
 save_mode = last
 ```
