@@ -222,6 +222,7 @@ Directory selection can vary depending on the file manager, however. Most file m
 | [lf]         | yes              | no               |
 | [nnn]        | yes              | yes              |
 | [ranger]     | yes              | no               |
+| [superfile]  | no               | yes              |
 | [vifm]       | yes              | yes              |
 | [yazi]       | yes              | yes              |
 
@@ -337,6 +338,7 @@ MIT
 - [lf](https://github.com/gokcehan/lf)
 - [nnn](https://github.com/jarun/nnn)
 - [ranger](https://github.com/ranger/ranger)
+- [superfile](https://github.com/yorukot/superfile)
 - [vifm](https://github.com/vifm/vifm)
 - [yazi](https://github.com/sxyazi/yazi)
 
