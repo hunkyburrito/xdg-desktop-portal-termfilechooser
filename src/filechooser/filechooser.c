@@ -197,6 +197,34 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     return 0;
 }
 
+static char *escape_path(char *path)
+{
+    // escape ' with '\'' in path
+    char *tmp = path;
+    size_t escaped_size = 0;
+    while (*tmp) {
+        escaped_size += (*tmp == '\'') ? 4 : 1;
+        tmp++;
+    }
+    escaped_size += 1;
+    char *escaped_path = malloc(escaped_size);
+    char *ptr = escaped_path;
+    tmp = path;
+    while (*tmp) {
+        if (*tmp == '\'') {
+            *ptr++ = '\'';
+            *ptr++ = '\\';
+            *ptr++ = '\'';
+            *ptr++ = '\'';
+        } else {
+            *ptr++ = *tmp;
+        }
+        tmp++;
+    }
+    *ptr = '\0';
+    return escaped_path;
+}
+
 static char *get_last_dir_path(void)
 {
     char *home = getenv("HOME");
@@ -474,7 +502,9 @@ static int method_open_file(sd_bus_message *msg, void *data,
 
     set_current_folder(&state->config->modes->open_mode,
                        &state->config->default_dir, &current_folder);
-    ret = exec_filechooser(data, false, multiple, directory, current_folder,
+
+    char *escaped_path = escape_path(current_folder);
+    ret = exec_filechooser(data, false, multiple, directory, escaped_path,
                            &selected_files, &num_selected_files);
 
     free(current_folder);
@@ -555,6 +585,7 @@ cleanup:
         free(selected_files[i]);
     }
     free(selected_files);
+    free(escaped_path);
 
     xdptf_request_destroy(req);
     return ret;
@@ -690,30 +721,7 @@ static int method_save_file(sd_bus_message *msg, void *data,
         fclose(temp_file);
     }
 
-    // escape ' with '\'' in path
-    // only needed for exec_filechooser()
-    char *tmp = path;
-    size_t escaped_size = 0;
-    while (*tmp) {
-        escaped_size += (*tmp == '\'') ? 4 : 1;
-        tmp++;
-    }
-    escaped_size += 1;
-    char *escaped_path = malloc(escaped_size);
-    char *ptr = escaped_path;
-    tmp = path;
-    while (*tmp) {
-        if (*tmp == '\'') {
-            *ptr++ = '\'';
-            *ptr++ = '\\';
-            *ptr++ = '\'';
-            *ptr++ = '\'';
-        } else {
-            *ptr++ = *tmp;
-        }
-        tmp++;
-    }
-    *ptr = '\0';
+    char *escaped_path = escape_path(path);
 
     ret = exec_filechooser(data, true, false, false, escaped_path,
                            &selected_files, &num_selected_files);
