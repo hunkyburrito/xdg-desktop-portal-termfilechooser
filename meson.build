@@ -72,7 +72,11 @@ conf_data = configuration_data()
 conf_data.set('libexecdir', join_paths(prefix, libexecdir))
 conf_data.set('systemd_service', '')
 
-systemd = dependency('systemd', required: get_option('systemd'))
+if sdbus.name() == 'libsystemd'
+    systemd = dependency('systemd', required: get_option('systemd'))
+else
+    systemd = dependency('systemd', required: false)
+endif
 
 if systemd.found()
     systemd_service_file = 'xdg-desktop-portal-termfilechooser.service'
