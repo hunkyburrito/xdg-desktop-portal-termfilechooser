@@ -90,7 +90,7 @@ Known distributions that require this are Alpine/postmarketOS, Debian, and Arch 
 
 ## Configuration
 
-By default, the contents of the `contrib` folder are placed in `/usr/local/share/xdg-desktop-portal-termfilechooser/`.
+By default, the contents of the `contrib` folder are placed in the data directory specified at build time. This is usually `/usr/local/share/xdg-desktop-portal-termfilechooser/` when locally built, but could be `/usr/share/...` if installed from another source.
 Copy the `config` to `$XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/` and edit it to set your preferred wrapper and default directory.
 
 The configuration is as follows:
