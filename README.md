@@ -261,7 +261,7 @@ If your version is older, you can remove `FileChooser` from `Interfaces` of the 
 
 2. Only some applications work
 
-- Check the [Compatability](https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser/blob/main/Compatability.md) documentation.
+- Check the [Compatibility](https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser/blob/main/Compatibility.md) documentation.
 
 3. Outdated version
 

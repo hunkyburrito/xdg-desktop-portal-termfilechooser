@@ -1,4 +1,4 @@
-# Compatability
+# Compatibility
 ## Generic Workarounds
 - For GTK applications:
     - Try setting the `GDK_DEBUG=portals` environment variable when running the application. If that doesn't help, try using the [deprecated](https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/4829) `GTK_USE_PORTAL=1` instead.
