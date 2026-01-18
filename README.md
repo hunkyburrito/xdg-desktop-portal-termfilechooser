@@ -352,5 +352,6 @@ MIT
 [lf]: https://github.com/gokcehan/lf
 [nnn]: https://github.com/jarun/nnn
 [ranger]: https://github.com/ranger/ranger
+[superfile]: https://github.com/yorukot/superfile
 [vifm]: https://github.com/vifm/vifm
 [yazi]: https://github.com/sxyazi/yazi
