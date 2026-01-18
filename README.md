@@ -230,12 +230,6 @@ Note: File managers that use "Quit" Selection often have a keybind or command to
 
 ### Tips
 
-#### Firefox
-
-Firefox has a setting in its `about:config` to always use XDG desktop portal's file chooser.
-
-Set `widget.use-xdg-desktop-portal.file-picker` to `1`. See the [ArchWiki](https://wiki.archlinux.org/title/Firefox#XDG_Desktop_Portal_integration) for more information.
-
 #### Disable the original file picker portal
 
 If your xdg-desktop-portal version (`/usr/lib/xdg-desktop-portal --version`) is newer than [`1.18.0`](https://github.com/flatpak/xdg-desktop-portal/releases/tag/1.18.0), you can specify the preferred FileChooser in `$XDG_CONFIG_HOME/xdg-desktop-portal/portals.conf`.
@@ -267,9 +261,7 @@ If your version is older, you can remove `FileChooser` from `Interfaces` of the 
 
 2. Only some applications work
 
-- For GTK applications, try setting the `GDK_DEBUG=portals` environment variable when running the problematic application. If that doesn't help, try using the [deprecated](https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/4829) `GTK_USE_PORTAL=1` instead.
-- For electron applications, try using a package built against a newer electron version. Older electron versions do not support the filechooser portal, and some versions have broken support (see https://github.com/electron/electron/issues/43819).
-- For Qt applications, try setting `QT_QPA_PLATFORMTHEME=flatpak` or `QT_QPA_PLATFORMTHEME=xdgdesktopportal` when running the application. Alternatively, you can just set the dialogs to `XDG Desktop Portal` within the `qt5ct/qt6ct` configuration programs to preserve your theme settings.
+- Check the [Compatability](https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser/blob/main/Compatability.md) documentation.
 
 3. Outdated version
 
