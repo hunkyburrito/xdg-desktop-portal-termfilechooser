@@ -90,7 +90,7 @@ Known distributions that require this are Alpine/postmarketOS, Debian, and Arch 
 
 ## Configuration
 
-By default, the contents of the `contrib` folder are placed in `/usr/local/share/xdg-desktop-portal-termfilechooser/`.
+By default, the contents of the `contrib` folder are placed in the data directory specified at build time. This is usually `/usr/local/share/xdg-desktop-portal-termfilechooser/` when locally built, but could be `/usr/share/...` if installed from another source.
 Copy the `config` to `$XDG_CONFIG_HOME/xdg-desktop-portal-termfilechooser/` and edit it to set your preferred wrapper and default directory.
 
 The configuration is as follows:
@@ -222,18 +222,13 @@ Directory selection can vary depending on the file manager, however. Most file m
 | [lf]         | yes              | no               |
 | [nnn]        | yes              | yes              |
 | [ranger]     | yes              | no               |
+| [superfile]  | no               | yes              |
 | [vifm]       | yes              | yes              |
 | [yazi]       | yes              | yes              |
 
 Note: File managers that use "Quit" Selection often have a keybind or command to abort the selection process. For example, in [yazi] it is 'Q'.
 
 ### Tips
-
-#### Firefox
-
-Firefox has a setting in its `about:config` to always use XDG desktop portal's file chooser.
-
-Set `widget.use-xdg-desktop-portal.file-picker` to `1`. See the [ArchWiki](https://wiki.archlinux.org/title/Firefox#XDG_Desktop_Portal_integration) for more information.
 
 #### Disable the original file picker portal
 
@@ -266,9 +261,7 @@ If your version is older, you can remove `FileChooser` from `Interfaces` of the 
 
 2. Only some applications work
 
-- For GTK applications, try setting the `GDK_DEBUG=portals` environment variable when running the problematic application. If that doesn't help, try using the [deprecated](https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/4829) `GTK_USE_PORTAL=1` instead.
-- For electron applications, try using a package built against a newer electron version. Older electron versions do not support the filechooser portal, and some versions have broken support (see https://github.com/electron/electron/issues/43819).
-- For Qt applications, try setting `QT_QPA_PLATFORMTHEME=flatpak` or `QT_QPA_PLATFORMTHEME=xdgdesktopportal` when running the application. Alternatively, you can just set the dialogs to `XDG Desktop Portal` within the `qt5ct/qt6ct` configuration programs to preserve your theme settings.
+- Check the [Compatibility](https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser/blob/main/Compatibility.md) documentation.
 
 3. Outdated version
 
@@ -337,6 +330,7 @@ MIT
 - [lf](https://github.com/gokcehan/lf)
 - [nnn](https://github.com/jarun/nnn)
 - [ranger](https://github.com/ranger/ranger)
+- [superfile](https://github.com/yorukot/superfile)
 - [vifm](https://github.com/vifm/vifm)
 - [yazi](https://github.com/sxyazi/yazi)
 
@@ -350,5 +344,6 @@ MIT
 [lf]: https://github.com/gokcehan/lf
 [nnn]: https://github.com/jarun/nnn
 [ranger]: https://github.com/ranger/ranger
+[superfile]: https://github.com/yorukot/superfile
 [vifm]: https://github.com/vifm/vifm
 [yazi]: https://github.com/sxyazi/yazi
