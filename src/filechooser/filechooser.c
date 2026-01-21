@@ -18,21 +18,22 @@
 #define PATH_PORTAL_BASE "/tmp/termfilechooser"
 
 static const char instructions[] =
-    "xdg-desktop-portal-termfilechooser saving files tutorial\n\n"
-    "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
-    "!!!                 === WARNING! ===                 !!!\n"
-    "!!! The contents of *whatever* file you open last in !!!\n"
-    "!!! your file manager will be *overwritten*!         !!!\n"
-    "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n"
-    "Instructions:\n"
-    "1) Move this file wherever you want.\n"
+    "* xdg-desktop-portal-termfilechooser instructions *\n"
+    "---------------------------------------------------\n\n"
+    "\t\t\t!!! WARNING !!!\n"
+    "Opening a file OVERWRITES it!\n\n"
+    "How to save *this* file:\n"
+    "1) Move the file to your \n"
+    "   desired location.\n"
     "2) Rename the file if needed.\n"
-    "3) Confirm your selection by opening the file.\n\n"
-    "Notes:\n"
-    "1) This file is provided for your convenience. You\n"
-    "   could delete it and choose another file to overwrite.\n"
-    "2) If you quit without opening a file, this file\n"
-    "   will be removed and the save operation aborted.\n";
+    "3) Open the file.\n\n"
+    "Tips:\n"
+    "- If you quit without opening\n"
+    "  a file, the save operation\n"
+    "  is cancelled."
+    "\n\n---------------------------------------------------\n"
+    "* xdg-desktop-portal-termfilechooser instructions *";
+
 
 static const char object_path[] = "/org/freedesktop/portal/desktop";
 static const char interface_name[] = "org.freedesktop.impl.portal.FileChooser";
