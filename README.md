@@ -53,6 +53,8 @@
     sudo dnf copr enable mo-k12/personal
     sudo dnf install xdg-desktop-portal-termfilechooser
 
+[Void](https://github.com/void-linux/void-packages/tree/master/srcpkgs/xdg-desktop-portal-termfilechooser)
+
 ### Building from source
 
 #### Download source
