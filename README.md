@@ -48,6 +48,8 @@
 
 [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name/xd/xdg-desktop-portal-termfilechooser)
 
+- NOTE: NixOS users may need to add `env=PATH="$PATH:/run/current-system/sw/bin` in the config. ([#56](https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser/issues/56#issuecomment-3697512117))
+
 [Fedora (COPR)](https://copr.fedorainfracloud.org/coprs/mo-k12/personal/package/xdg-desktop-portal-termfilechooser/)
 
     sudo dnf copr enable mo-k12/personal
