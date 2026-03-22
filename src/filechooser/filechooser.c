@@ -270,7 +270,7 @@ static char *read_last_dir(void)
 
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
-        logprint(ERROR, "filechooser: failed to open '%s'", filename);
+        logprint(WARN, "filechooser: failed to open '%s'", filename);
         free(filename);
         free(path);
         return NULL;
