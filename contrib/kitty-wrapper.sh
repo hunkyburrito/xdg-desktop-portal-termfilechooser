@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env sh
 # This wrapper script is invoked by xdg-desktop-portal-termfilechooser.
 #
 # For more information about input/output arguments read `xdg-desktop-portal-termfilechooser(5)`
@@ -31,7 +31,10 @@ esac
 touch $out
 
 if [ "$save" = 1 ]; then
-    kitty --class filechooser kitty +kitten choose-files --mode=$mode --write-output-to "$out" --suggested-save-file-path "$path"
+    escaped=$(printf "%s" "$path" | sed 's/"/\\"/g')
+    kitty --class filechooser kitty +kitten choose-files --mode=$mode \
+        --write-output-to "$out" --suggested-save-file-path "$escaped"
 else
-    kitty --class filechooser kitty +kitten choose-files --mode=$mode --write-output-to "$out"
+    kitty --class filechooser kitty +kitten choose-files --mode=$mode \
+        --write-output-to "$out"
 fi
