@@ -33,7 +33,7 @@ touch $out
 if [ "$save" = 1 ]; then
     escaped=$(printf "%s" "$path" | sed 's/"/\\"/g')
     kitty --class filechooser kitty +kitten choose-files --mode=$mode \
-        --write-output-to "$out" --suggested-save-file-path "$escaped"
+        --write-output-to "$out" --suggested-save-file-name "$escaped"
 else
     kitty --class filechooser kitty +kitten choose-files --mode=$mode \
         --write-output-to "$out"
