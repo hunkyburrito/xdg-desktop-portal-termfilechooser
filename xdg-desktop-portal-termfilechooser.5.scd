@@ -65,10 +65,10 @@ files.
 *Position*: Argument 5++
 *Value*: string < file path >
 
-*Name*: _N/A_ ++
-*Description*: The loglevel set for termfilechooser.++
+*Name*: _debug_ ++
+*Description*: Enable/Disable debug output for the wrapper (Log levels 4/DEBUG and higher).++
 *Position*: Argument 6++
-*Vaule*: int
+*Vaule*: boolean < 0 | 1 >
 
 # FILECHOOSER CONFIGURATION
 

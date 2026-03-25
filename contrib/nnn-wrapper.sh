@@ -3,17 +3,18 @@
 #
 # For more information about input/output arguments read `xdg-desktop-portal-termfilechooser(5)`
 
-set -e
-
-if [ "$6" -ge 4 ]; then
-    set -x
-fi
-
 multiple="$1"
 directory="$2"
 save="$3"
 path="$4"
 out="$5"
+debug="$6"
+
+set -e
+
+if [ "$debug" = 1 ]; then
+    set -x
+fi
 
 cmd="nnn"
 termcmd="${TERMCMD:-kitty --title 'termfilechooser'}"
