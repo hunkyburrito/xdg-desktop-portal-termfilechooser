@@ -28,12 +28,11 @@ case "$multiple$directory$save" in
     *) echo "invalid params" >&2; exit 1
 esac
 
-touch $out
+touch "$out"
 
 if [ "$save" = 1 ]; then
-    escaped=$(printf "%s" "$path" | sed 's/"/\\"/g')
     kitty --class filechooser kitty +kitten choose-files --mode=$mode \
-        --write-output-to "$out" --suggested-save-file-name "\"$escaped\""
+        --write-output-to "$out" --suggested-save-file-name "$path"
 else
     kitty --class filechooser kitty +kitten choose-files --mode=$mode \
         --write-output-to "$out"

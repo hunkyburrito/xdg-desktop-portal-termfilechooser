@@ -33,23 +33,15 @@ else
     set -- -p "$out" "$path"
 fi
 
-command="$termcmd $cmd"
-for arg in "$@"; do
-    # escape double quotes
-    escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
-    # escape special
-    command="$command \"$escaped\""
-done
-
 if [ "$directory" = "1" ]; then
-    sh -c "env NNN_TMPFILE=\"$out\" $command"
+    env NNN_TMPFILE="$out" $termcmd $cmd "$@"
 else
-    sh -c "$command"
+    $termcmd $cmd "$@"
 fi
 
 if [ "$directory" = "1" ] && [ -s "$out" ]; then
     # select on quit; file data will be `cd '/dir/path'`
     if [ "$(cut -c -2 "$out")" = "cd" ]; then
-        sed -i "s/^cd '\(.*\)'/\1/" "$out"
+        sed -i "s/^cd '\(.*\)'/\1/; s/'\\\''/'/g" "$out"
     fi
 fi
