@@ -33,4 +33,4 @@ else
     set -- --choosefile="$out" --cmd="echo Select file (open file to select it)" "$path"
 fi
 
-$termcmd $cmd "$@"
+eval $termcmd $cmd "$@"

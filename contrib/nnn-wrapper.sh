@@ -34,9 +34,9 @@ else
 fi
 
 if [ "$directory" = "1" ]; then
-    env NNN_TMPFILE="$out" $termcmd $cmd "$@"
+    eval env NNN_TMPFILE="$out" $termcmd $cmd "$@"
 else
-    $termcmd $cmd "$@"
+    eval $termcmd $cmd "$@"
 fi
 
 if [ "$directory" = "1" ] && [ -s "$out" ]; then
