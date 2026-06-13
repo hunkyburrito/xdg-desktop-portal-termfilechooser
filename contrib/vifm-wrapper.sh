@@ -35,4 +35,4 @@ else
 	set -- --choose-files "$out" -c "only" -c "map <esc> :cquit<cr>" -c "set statusline='Select file (open file to select it, press <Esc> to cancel)'"
 fi
 
-eval $termcmd $cmd "$@"
+$termcmd $cmd "$@"

@@ -33,7 +33,7 @@ else
     set -- --chooser-file="$out" "$path"
 fi
 
-eval $termcmd $cmd "$@"
+$termcmd $cmd "$@"
 
 if [ "$directory" = "1" ]; then
     if [ ! -s "$out" ] && [ -s "$out"".1" ]; then

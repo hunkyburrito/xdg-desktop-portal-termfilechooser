@@ -33,4 +33,4 @@ else
 	set -- -selection-path "$out" "$path"
 fi
 
-eval $termcmd $cmd "$@"
+$termcmd $cmd "$@"

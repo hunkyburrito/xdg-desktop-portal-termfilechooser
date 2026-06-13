@@ -144,6 +144,8 @@ static void parse_env(struct environment *env, const char *envstr)
 
     char *name = strndup(envstr, sep - envstr);
     char *value = strdup(sep + 1);
+    char *expanded = shell_expand(value);
+    free(value);
 
     // dynamically allocate more vars
     if (env->num_vars == env->capacity) {
@@ -153,7 +155,7 @@ static void parse_env(struct environment *env, const char *envstr)
 
     // append to env
     env->vars[env->num_vars].name = name;
-    env->vars[env->num_vars].value = value;
+    env->vars[env->num_vars].value = expanded;
     env->num_vars++;
 }
 
