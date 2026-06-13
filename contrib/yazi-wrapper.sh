@@ -33,7 +33,15 @@ else
     set -- --chooser-file="$out" "$path"
 fi
 
-$termcmd $cmd "$@"
+command="$termcmd $cmd"
+for arg in "$@"; do
+    # escape double quotes
+    escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
+    # escape special
+    command="$command \"$escaped\""
+done
+
+sh -c "$command"
 
 if [ "$directory" = "1" ]; then
     if [ ! -s "$out" ] && [ -s "$out"".1" ]; then
