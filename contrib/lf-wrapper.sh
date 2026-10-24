@@ -10,6 +10,8 @@ path="$4"
 out="$5"
 debug="$6"
 
+shift 6 # remaining positional args are TERMCMD
+
 set -e
 
 if [ "$debug" = 1 ]; then
@@ -17,28 +19,22 @@ if [ "$debug" = 1 ]; then
 fi
 
 cmd="lf"
-termcmd="${TERMCMD:-kitty --title 'termfilechooser'}"
 
-if [ "$save" = "1" ]; then
-    # save a file
-	set -- -selection-path "$out" "$path"
-elif [ "$directory" = "1" ]; then
-    # upload files from a directory
-	set -- -last-dir-path "$out" "$path"
-elif [ "$multiple" = "1" ]; then
-    # upload multiple files
-	set -- -selection-path "$out" "$path"
-else
-    # upload only 1 file
-	set -- -selection-path "$out" "$path"
-fi
+run_command() {
+    if [ "$save" = "1" ]; then
+        # save a file
+        set -- "$@" $cmd -selection-path "$out" "$path"
+    elif [ "$directory" = "1" ]; then
+        # upload files from a directory
+        set -- "$@" $cmd -last-dir-path "$out" "$path"
+    elif [ "$multiple" = "1" ]; then
+        # upload multiple files
+        set -- "$@" $cmd -selection-path "$out" "$path"
+    else
+        # upload only 1 file
+        set -- "$@" $cmd -selection-path "$out" "$path"
+    fi
 
-command="$termcmd $cmd"
-for arg in "$@"; do
-    # escape double quotes
-    escaped=$(printf "%s" "$arg" | sed 's/"/\\"/g')
-    # escape special
-    command="$command \"$escaped\""
-done
-
-sh -c "$command"
+    "$@" # this runs the whole command: $TERMCMD $cmd $@
+}
+run_command "$@" # $@ == TERMCMD

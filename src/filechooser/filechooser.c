@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <wordexp.h>
 
 #define PATH_PREFIX "file://"
 #define PATH_PORTAL_BASE "/tmp/termfilechooser"
@@ -34,7 +35,6 @@ static const char instructions[] =
     "\n\n---------------------------------------------------\n"
     "* xdg-desktop-portal-termfilechooser instructions *";
 
-
 static const char object_path[] = "/org/freedesktop/portal/desktop";
 static const char interface_name[] = "org.freedesktop.impl.portal.FileChooser";
 
@@ -49,42 +49,43 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         return -1;
     }
 
-    if (path == NULL) {
-        path = "";
-    }
-
     uid_t uid = getuid();
     size_t filename_size =
         1 + snprintf(NULL, 0, "%s-%u.portal", PATH_PORTAL_BASE, uid);
     char *filename = malloc(filename_size);
     snprintf(filename, filename_size, "%s-%u.portal", PATH_PORTAL_BASE, uid);
 
-    size_t str_size = 1 + snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\' %d",
-                                   cmd_script, multiple, directory, writing,
-                                   path, filename, get_logger_level() >= 4);
-    char *cmd = malloc(str_size);
-    snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\' %d", cmd_script,
-             multiple, directory, writing, path, filename, get_logger_level() >= 4);
-
-    struct environment *env = state->config->env;
+    logprint(DEBUG, "filechooser: output path: %s", filename);
 
     if (access(filename, F_OK) == 0) {
+        if (access(filename, R_OK | W_OK) != 0) {
+            logprint(ERROR, "filechooser: cannot read/write '%s'", filename);
+            free(filename);
+            return -1;
+        }
         // clear contents
         FILE *fp = fopen(filename, "w");
         if (fp == NULL) {
             logprint(ERROR, "filechooser: could not open '%s'", filename);
             free(filename);
-            free(cmd);
             return -1;
         }
         if (fclose(fp) != 0) {
             logprint(ERROR, "filechooser: could not close '%s'", filename);
             free(filename);
-            free(cmd);
             return -1;
         }
     }
 
+    char *args[] = {cmd_script,
+                    multiple ? "1" : "0",
+                    directory ? "1" : "0",
+                    writing ? "1" : "0",
+                    path ? path : "",
+                    filename,
+                    get_logger_level() >= DEBUG ? "1" : "0"};
+
+    struct environment *env = state->config->env;
     for (int i = 0, ret = 0; i < env->num_vars; i++) {
         logprint(TRACE, "filechooser: setting env: %s=%s", env->vars[i].name,
                  env->vars[i].value);
@@ -95,23 +96,105 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         }
     }
 
-    logprint(TRACE, "filechooser: executing command '%s'", cmd);
-    int ret = system(cmd);
-    if (ret) {
-        if (ret == -1) {
-            logprint(ERROR, "filechooser: could not execute '%s': %s", cmd,
-                     strerror(errno));
-        } else {
-            // FIX: properly get exit code
-            logprint(ERROR, "filechooser: could not execute '%s': exit code %d",
-                     cmd, -ret / 256);
-        }
-        remove(filename);
+    char *termcmd = getenv("TERMCMD");
+    char *termcmd_fallback = "kitty --title 'termfilechooser'";
+    if (!termcmd)
+        termcmd = termcmd_fallback;
+    wordexp_t exp;
+    exp.we_offs = sizeof args / sizeof args[0];
+    int ret = wordexp(termcmd, &exp, WRDE_NOCMD | WRDE_UNDEF | WRDE_DOOFFS);
+    if (ret == WRDE_NOSPACE) {
+        logprint(ERROR, "filechooser: TERMCMD expansion failed; out of memory");
         free(filename);
-        free(cmd);
         return -1;
     }
-    free(cmd);
+    if (ret && termcmd != termcmd_fallback) {
+        switch (ret) {
+            case WRDE_BADCHAR:
+                logprint(WARN, "filechooser: TERMCMD contains an illegal "
+                               "character, falling back to default");
+                break;
+            case WRDE_BADVAL:
+                logprint(WARN, "filechooser: TERMCMD contains an undefined "
+                               "shell variable, falling back to default");
+                break;
+            case WRDE_CMDSUB:
+                logprint(WARN, "filechooser: TERMCMD contains a command "
+                               "substitution, falling back to default");
+                break;
+            case WRDE_SYNTAX:
+                logprint(WARN, "filechooser: TERMCMD has a shell syntax error, "
+                               "falling back to default");
+                break;
+        }
+        ret = wordexp(termcmd_fallback, &exp,
+                      WRDE_NOCMD | WRDE_UNDEF | WRDE_DOOFFS);
+        if (ret) {
+            logprint(ERROR,
+                     "filechooser: TERMCMD expansion failed; out of memory");
+            free(filename);
+            return -1;
+        }
+    }
+
+    for (size_t i = 0; i < exp.we_offs; i++) {
+        exp.we_wordv[i] = args[i];
+    }
+    char **wrapper_args = exp.we_wordv;
+    size_t num_wrapper_args =
+        exp.we_offs + exp.we_wordc; // ending NULL excluded
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        logprint(ERROR, "filechooser: fork failed: %d", strerror(errno));
+        wordfree(&exp);
+        free(filename);
+        return -1;
+    } else if (pid == 0) {
+        // Child process
+        if (get_logger_level() >= DEBUG) {
+            size_t cmd_size = 1;
+            for (size_t i = 0; i < num_wrapper_args; i++) {
+                if (wrapper_args[i]) {
+                    cmd_size +=
+                        strlen(wrapper_args[i]) + 2; // tab + newline characters
+                }
+            }
+            char *cmd = malloc(cmd_size);
+            if (cmd) {
+                char *p = cmd;
+                for (size_t i = 0; i < num_wrapper_args; i++) {
+                    if (wrapper_args[i]) {
+                        *p++ = '\t';
+                        size_t len = strlen(wrapper_args[i]);
+                        memcpy(p, wrapper_args[i], len);
+                        p += len;
+                        *p++ = '\n';
+                    }
+                }
+                *p = '\0';
+                logprint(DEBUG, "filechooser: executing command:\n%s", cmd);
+                free(cmd);
+            }
+        }
+        execvp(cmd_script, (char *const *)wrapper_args);
+        logprint(ERROR, "filechooser: execvp failed: %s", strerror(errno));
+        remove(filename);
+        wordfree(&exp);
+        free(filename);
+        _exit(EXIT_FAILURE);
+    } else {
+        // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+        wordfree(&exp);
+        if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+            logprint(ERROR, "filechooser: command failed with status '%d'",
+                     WEXITSTATUS(status));
+            free(filename);
+            return -1;
+        }
+    }
 
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
