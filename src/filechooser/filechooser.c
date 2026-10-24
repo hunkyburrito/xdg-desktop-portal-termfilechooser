@@ -704,14 +704,19 @@ static int method_save_file(sd_bus_message *msg, void *data,
     free(current_folder);
 
     if (state->config->create_help_file == 1) {
-        while (access(path, F_OK) == 0) {
-            char *path_tmp = malloc(path_size);
-            memcpy(path_tmp, path, path_size);
-            path_size += 1;
-            path = realloc(path, path_size);
-            snprintf(path, path_size, "%s_", path_tmp);
-            free(path_tmp);
+        const char *extension = strrchr(current_name, '.');
+        if (extension == NULL || extension == current_name) {
+            extension = "";
         }
+        char *path_stem = strndup(path, strlen(path) - strlen(extension));
+
+        for (size_t i = 1; access(path, F_OK) == 0; i++) {
+            path_size =
+                1 + snprintf(NULL, 0, "%s_%zu%s", path_stem, i, extension);
+            path = realloc(path, path_size);
+            snprintf(path, path_size, "%s_%zu%s", path_stem, i, extension);
+        }
+        free(path_stem);
 
         FILE *temp_file = fopen(path, "w");
         if (temp_file == NULL) {
