@@ -34,7 +34,6 @@ static const char instructions[] =
     "\n\n---------------------------------------------------\n"
     "* xdg-desktop-portal-termfilechooser instructions *";
 
-
 static const char object_path[] = "/org/freedesktop/portal/desktop";
 static const char interface_name[] = "org.freedesktop.impl.portal.FileChooser";
 
@@ -49,38 +48,40 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         return -1;
     }
 
-    if (path == NULL) {
-        path = "";
-    }
-
     uid_t uid = getuid();
     size_t filename_size =
         1 + snprintf(NULL, 0, "%s-%u.portal", PATH_PORTAL_BASE, uid);
     char *filename = malloc(filename_size);
     snprintf(filename, filename_size, "%s-%u.portal", PATH_PORTAL_BASE, uid);
 
-    size_t str_size = 1 + snprintf(NULL, 0, "%s %d %d %d \'%s\' \'%s\' %d",
-                                   cmd_script, multiple, directory, writing,
-                                   path, filename, get_logger_level() >= 4);
-    char *cmd = malloc(str_size);
-    snprintf(cmd, str_size, "%s %d %d %d \'%s\' \'%s\' %d", cmd_script,
-             multiple, directory, writing, path, filename, get_logger_level() >= 4);
+    logprint(DEBUG, "filechooser: output path: %s", filename);
+
+    const char *args[] = {cmd_script,
+                          multiple ? "1" : "0",
+                          directory ? "1" : "0",
+                          writing ? "1" : "0",
+                          path ? path : "",
+                          filename,
+                          get_logger_level() >= DEBUG ? "1" : "0",
+                          NULL};
 
     struct environment *env = state->config->env;
 
     if (access(filename, F_OK) == 0) {
+        if (access(filename, R_OK | W_OK) != 0) {
+            logprint(ERROR, "filechooser: cannot read/write '%s'", filename);
+            return -1;
+        }
         // clear contents
         FILE *fp = fopen(filename, "w");
         if (fp == NULL) {
             logprint(ERROR, "filechooser: could not open '%s'", filename);
             free(filename);
-            free(cmd);
             return -1;
         }
         if (fclose(fp) != 0) {
             logprint(ERROR, "filechooser: could not close '%s'", filename);
             free(filename);
-            free(cmd);
             return -1;
         }
     }
@@ -95,23 +96,52 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         }
     }
 
-    logprint(TRACE, "filechooser: executing command '%s'", cmd);
-    int ret = system(cmd);
-    if (ret) {
-        if (ret == -1) {
-            logprint(ERROR, "filechooser: could not execute '%s': %s", cmd,
-                     strerror(errno));
-        } else {
-            // FIX: properly get exit code
-            logprint(ERROR, "filechooser: could not execute '%s': exit code %d",
-                     cmd, -ret / 256);
+    pid_t pid = fork();
+    if (pid == -1) {
+        logprint(ERROR, "filechooser: fork failed: %d", strerror(errno));
+        return -1;
+    } else if (pid == 0) {
+        // Child process
+        if (get_logger_level() >= DEBUG) {
+            size_t num_args = sizeof args / sizeof args[0];
+            size_t cmd_size = 1;
+            for (size_t i = 0; i < num_args; i++) {
+                if (args[i]) {
+                    cmd_size += strlen(args[i]) + 2;
+                }
+            }
+            char *cmd = malloc(cmd_size);
+            if (cmd) {
+                char *p = cmd;
+                for (size_t i = 0; i < num_args; i++) {
+                    if (args[i]) {
+                        *p++ = '\t';
+                        size_t len = strlen(args[i]);
+                        memcpy(p, args[i], len);
+                        p += len;
+                        *p++ = '\n';
+                    }
+                }
+                *p = '\0';
+                logprint(DEBUG, "filechooser: executing command:\n%s", cmd);
+                free(cmd);
+            }
         }
+        execvp(cmd_script, (char *const *)args);
+        logprint(ERROR, "filechooser: execvp failed: %s", strerror(errno));
         remove(filename);
         free(filename);
-        free(cmd);
-        return -1;
+        _exit(EXIT_FAILURE);
+    } else {
+        // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+            logprint(ERROR, "filechooser: command failed with status '%s'",
+                     WEXITSTATUS(status));
+            return -1;
+        }
     }
-    free(cmd);
 
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
