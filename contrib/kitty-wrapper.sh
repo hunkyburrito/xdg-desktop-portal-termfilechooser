@@ -10,6 +10,8 @@ path="$4"
 out="$5"
 debug="$6"
 
+shift 6 # remaining positional args are TERMCMD
+
 set -e
 
 if [ "$debug" = 1 ]; then
