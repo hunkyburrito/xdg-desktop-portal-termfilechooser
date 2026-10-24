@@ -70,6 +70,10 @@ files.
 *Position*: Argument 6++
 *Vaule*: boolean < 0 | 1 >
 
+There will also be a number of dynamic positional arguments that follow the
+arguments mentioned above. The remaining arguments correspond to the value set
+by *TERMCMD* after being evaluated and expanded.
+
 # FILECHOOSER CONFIGURATION
 
 The configuration file uses the INI file format. The only implemented section is
