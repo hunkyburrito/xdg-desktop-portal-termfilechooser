@@ -1,15 +1,20 @@
+#define _DEFAULT_SOURCE
 #include "config.h"
 #include "logger.h"
 #include "uri.h"
 #include "xdptf.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
+#include <signal.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -35,12 +40,17 @@ static const char instructions[] =
     "\n\n---------------------------------------------------\n"
     "* xdg-desktop-portal-termfilechooser instructions *";
 
+static unsigned request_counter;
+
 static const char object_path[] = "/org/freedesktop/portal/desktop";
 static const char interface_name[] = "org.freedesktop.impl.portal.FileChooser";
 
-static int exec_filechooser(void *data, bool writing, bool multiple,
-                            bool directory, char *path, char ***selected_files,
-                            size_t *num_selected_files)
+/* Spawn the chooser wrapper without waiting for it. On success *out_pid is the
+ * child (a process group leader, so the whole group can be signalled) and
+ * *out_filename the per-request file the wrapper writes its selection to. */
+static int start_filechooser(void *data, bool writing, bool multiple,
+                             bool directory, char *path, pid_t *out_pid,
+                             char **out_filename)
 {
     struct xdptf_state *state = data;
     char *cmd_script = state->config->cmd;
@@ -49,11 +59,16 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         return -1;
     }
 
+    /* One output file per request so concurrent dialogs cannot clobber each
+     * other's selection. */
     uid_t uid = getuid();
+    unsigned id = ++request_counter;
     size_t filename_size =
-        1 + snprintf(NULL, 0, "%s-%u.portal", PATH_PORTAL_BASE, uid);
+        1 + snprintf(NULL, 0, "%s-%u-%d-%u.portal", PATH_PORTAL_BASE, uid,
+                     (int)getpid(), id);
     char *filename = malloc(filename_size);
-    snprintf(filename, filename_size, "%s-%u.portal", PATH_PORTAL_BASE, uid);
+    snprintf(filename, filename_size, "%s-%u-%d-%u.portal", PATH_PORTAL_BASE,
+             uid, (int)getpid(), id);
 
     logprint(DEBUG, "filechooser: output path: %s", filename);
 
@@ -151,7 +166,9 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         free(filename);
         return -1;
     } else if (pid == 0) {
-        // Child process
+        // Child process: own process group, so Request.Close can end the
+        // wrapper together with the terminal and file manager it started
+        setpgid(0, 0);
         if (get_logger_level() >= DEBUG) {
             size_t cmd_size = 1;
             for (size_t i = 0; i < num_wrapper_args; i++) {
@@ -183,24 +200,41 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         wordfree(&exp);
         free(filename);
         _exit(EXIT_FAILURE);
-    } else {
-        // Parent process
-        int status;
-        waitpid(pid, &status, 0);
-        wordfree(&exp);
-        if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+    }
+
+    // Parent process: do not wait, the main loop reaps the child. Also set the
+    // process group here so it exists before any Request.Close can arrive.
+    setpgid(pid, pid);
+    wordfree(&exp);
+    *out_pid = pid;
+    *out_filename = filename;
+    return 0;
+}
+
+/* Returns 0 with the selection, 1 when nothing was selected (the user
+ * cancelled), or -1 when the command failed. */
+static int read_selection(const char *filename, int status,
+                          char ***selected_files, size_t *num_selected_files)
+{
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        if (WIFEXITED(status)) {
             logprint(ERROR, "filechooser: command failed with status '%d'",
                      WEXITSTATUS(status));
-            free(filename);
-            return -1;
+        } else if (WIFSIGNALED(status)) {
+            logprint(ERROR, "filechooser: command killed by signal '%d'",
+                     WTERMSIG(status));
+        } else {
+            logprint(ERROR, "filechooser: command status unknown");
         }
+        remove(filename);
+        return -1;
     }
 
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
-        logprint(ERROR, "filechooser: failed to open '%s'", filename);
-        free(filename);
-        return -1;
+        // the wrapper writes the file only when something was selected
+        logprint(DEBUG, "filechooser: no selection written to '%s'", filename);
+        return 1;
     }
 
     size_t nchars = 0, num_lines = 0;
@@ -217,7 +251,6 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         if (ferror(fp)) {
             fclose(fp);
             remove(filename);
-            free(filename);
             return -1;
         }
     }
@@ -230,15 +263,13 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
     if (fseek(fp, 0, SEEK_SET) != 0) {
         fclose(fp);
         remove(filename);
-        free(filename);
         return -1;
     }
 
     if (num_lines == 0) {
         fclose(fp);
         remove(filename);
-        free(filename);
-        return -1;
+        return 1;
     }
 
     *num_selected_files = num_lines;
@@ -259,7 +290,6 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
             *num_selected_files = 0;
             fclose(fp);
             remove(filename);
-            free(filename);
             return -1;
         }
         // if all chars are encoded, size = orig_size * 3 + 1
@@ -279,7 +309,6 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
 
     fclose(fp);
     remove(filename);
-    free(filename);
     return 0;
 }
 
@@ -503,6 +532,304 @@ static void set_current_folder(enum Mode *mode, char **default_dir,
     }
 }
 
+/* ---- asynchronous dialogs ------------------------------------------------
+ * A chooser dialog can stay open for as long as the user likes, and several
+ * applications may each have one open. Handlers therefore only spawn the
+ * dialog and return; the main loop (see xdptf_filechooser_* below) notices when
+ * the child exits and sends the reply. */
+
+struct pending {
+    struct pending *next;
+    struct xdptf_state *state;
+    struct xdptf_request *req;
+    sd_bus_message *msg;
+    char *filename; /* per-request selection file written by the wrapper */
+    char *path;     /* SaveFile: placeholder path, NULL for OpenFile */
+    pid_t pid;
+    int pidfd;
+    bool writing;
+    bool cancelled;
+};
+
+static struct pending *pending_head;
+
+static int send_response(sd_bus_message *msg, uint32_t response, char **files)
+{
+    sd_bus_message *reply = NULL;
+    int ret = sd_bus_message_new_method_return(msg, &reply);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = sd_bus_message_append(reply, "u", response);
+    if (ret < 0) {
+        goto out;
+    }
+
+    ret = sd_bus_message_open_container(reply, 'a', "{sv}");
+    if (ret < 0) {
+        goto out;
+    }
+
+    if (files) {
+        ret = sd_bus_message_open_container(reply, 'e', "sv");
+        if (ret < 0) {
+            goto out;
+        }
+        ret = sd_bus_message_append_basic(reply, 's', "uris");
+        if (ret < 0) {
+            goto out;
+        }
+        ret = sd_bus_message_open_container(reply, 'v', "as");
+        if (ret < 0) {
+            goto out;
+        }
+        ret = sd_bus_message_append_strv(reply, files);
+        if (ret < 0) {
+            goto out;
+        }
+        ret = sd_bus_message_close_container(reply);
+        if (ret < 0) {
+            goto out;
+        }
+        ret = sd_bus_message_close_container(reply);
+        if (ret < 0) {
+            goto out;
+        }
+    }
+
+    ret = sd_bus_message_close_container(reply);
+    if (ret < 0) {
+        goto out;
+    }
+
+    ret = sd_bus_send(NULL, reply, NULL);
+out:
+    sd_bus_message_unref(reply);
+    return ret;
+}
+
+static void pending_free(struct pending *p)
+{
+    for (struct pending **pp = &pending_head; *pp; pp = &(*pp)->next) {
+        if (*pp == p) {
+            *pp = p->next;
+            break;
+        }
+    }
+    if (p->pidfd >= 0) {
+        close(p->pidfd);
+    }
+    sd_bus_message_unref(p->msg);
+    xdptf_request_destroy(p->req);
+    free(p->filename);
+    free(p->path);
+    free(p);
+}
+
+/* The dialog process has exited: read its selection and answer the request. */
+static void pending_complete(struct pending *p, int status)
+{
+    struct xdptf_state *state = p->state;
+    char **selected_files = NULL;
+    size_t num_selected_files = 0;
+
+    int ret = read_selection(p->filename, status, &selected_files,
+                             &num_selected_files);
+    if (p->cancelled) {
+        ret = 1;
+    }
+
+    logprint(INFO, "filechooser: (%s) Number of selected files: %zu",
+             p->writing ? "SaveFile" : "OpenFile", num_selected_files);
+
+    if (p->writing) {
+        if (ret || num_selected_files != 1) {
+            // if file created
+            if (state->config->create_help_file == 1) {
+                remove(p->path);
+            }
+            if (ret == 0) {
+                logprint(ERROR, "filechooser: too many selected SaveFiles");
+                ret = -1;
+            }
+        } else if (state->config->create_help_file == 1) {
+            char *decoded = NULL;
+            logprint(DEBUG, "filechooser: %s", selected_files[0]);
+            decoded = malloc(1 + strlen(selected_files[0]));
+            uri_decode(selected_files[0], strlen(selected_files[0]), decoded);
+
+            struct stat statbuf;
+            if (stat(decoded + strlen(PATH_PREFIX), &statbuf) == 0) {
+                if (S_ISDIR(statbuf.st_mode)) {
+                    logprint(ERROR,
+                             "filechooser: selected SaveFile is a directory");
+                    ret = -1;
+                }
+            } else {
+                logprint(ERROR, "filechooser: failed to stat '%s': %s",
+                         decoded + strlen(PATH_PREFIX), strerror(errno));
+                ret = -1;
+            }
+
+            if (ret == 0 &&
+                strcmp(decoded + strlen(PATH_PREFIX), p->path) != 0) {
+                remove(p->path);
+            }
+            free(decoded);
+        }
+    } else if (!ret) {
+        for (size_t i = 0; i < num_selected_files; i++) {
+            logprint(DEBUG, "filechooser: %zu. %s", i, selected_files[i]);
+        }
+    }
+
+    if (!ret) {
+        enum Mode mode = p->writing ? state->config->modes->save_mode
+                                    : state->config->modes->open_mode;
+        if (mode == MODE_LAST_DIR) {
+            set_last_dir(selected_files[num_selected_files - 1]);
+        }
+    }
+
+    uint32_t response = ret == 0  ? PORTAL_RESPONSE_SUCCESS
+                        : ret > 0 ? PORTAL_RESPONSE_CANCELLED
+                                  : PORTAL_RESPONSE_ENDED;
+    int sent =
+        send_response(p->msg, response, ret == 0 ? selected_files : NULL);
+    if (sent < 0) {
+        logprint(ERROR, "dbus: sending response failed: %s", strerror(-sent));
+    }
+
+    for (size_t i = 0; i < num_selected_files; i++) {
+        free(selected_files[i]);
+    }
+    free(selected_files);
+    pending_free(p);
+}
+
+/* The frontend calls Request.Close when the application cancels the request or
+ * goes away: tear the dialog down so it is not left orphaned. */
+static void pending_cancel(void *data)
+{
+    struct pending *p = data;
+    if (p->cancelled) {
+        return;
+    }
+    logprint(INFO, "filechooser: request cancelled, closing dialog");
+    p->cancelled = true;
+    kill(-p->pid, SIGTERM);
+}
+
+/* Takes ownership of save_path. Always consumes the request: on success the
+ * reply is sent later, on failure an "ended" response is sent right away. */
+static int pending_start(struct xdptf_state *state, sd_bus_message *msg,
+                         const char *handle, bool writing, bool multiple,
+                         bool directory, char *escaped_path, char *save_path)
+{
+    struct xdptf_request *req =
+        xdptf_request_create(sd_bus_message_get_bus(msg), handle);
+    if (req == NULL) {
+        free(save_path);
+        return -ENOMEM;
+    }
+
+    struct pending *p = calloc(1, sizeof(*p));
+    if (p == NULL) {
+        xdptf_request_destroy(req);
+        free(save_path);
+        return -ENOMEM;
+    }
+    p->state = state;
+    p->req = req;
+    p->path = save_path;
+    p->writing = writing;
+    p->pidfd = -1;
+
+    if (start_filechooser(state, writing, multiple, directory, escaped_path,
+                          &p->pid, &p->filename) != 0) {
+        goto fail;
+    }
+
+    p->pidfd = (int)syscall(SYS_pidfd_open, p->pid, 0);
+    if (p->pidfd < 0) {
+        logprint(ERROR, "filechooser: pidfd_open failed: %s", strerror(errno));
+        kill(-p->pid, SIGKILL);
+        waitpid(p->pid, NULL, 0);
+        remove(p->filename);
+        goto fail;
+    }
+
+    p->msg = sd_bus_message_ref(msg);
+    req->close_cb = pending_cancel;
+    req->close_data = p;
+    p->next = pending_head;
+    pending_head = p;
+    return 1;
+
+fail:
+    if (writing && state->config->create_help_file == 1) {
+        remove(p->path);
+    }
+    send_response(msg, PORTAL_RESPONSE_ENDED, NULL);
+    xdptf_request_destroy(req);
+    free(p->filename);
+    free(p->path);
+    free(p);
+    return 1;
+}
+
+size_t xdptf_filechooser_pending_count(void)
+{
+    size_t n = 0;
+    for (struct pending *p = pending_head; p; p = p->next) {
+        n++;
+    }
+    return n;
+}
+
+size_t xdptf_filechooser_pollfds(struct pollfd *fds)
+{
+    size_t n = 0;
+    for (struct pending *p = pending_head; p; p = p->next) {
+        fds[n].fd = p->pidfd;
+        fds[n].events = POLLIN;
+        fds[n].revents = 0;
+        n++;
+    }
+    return n;
+}
+
+/* Answer every request whose dialog has exited. */
+void xdptf_filechooser_reap(void)
+{
+    struct pending *p = pending_head;
+    while (p) {
+        struct pending *next = p->next;
+        int status = 0;
+        pid_t r = waitpid(p->pid, &status, WNOHANG);
+        if (r == p->pid) {
+            pending_complete(p, status);
+        } else if (r < 0 && errno != EINTR) {
+            logprint(ERROR, "filechooser: waitpid failed: %s", strerror(errno));
+            pending_complete(p, -1); // not an exit status: read as failure
+        }
+        p = next;
+    }
+}
+
+/* Called on exit: do not leave dialogs behind. */
+void xdptf_filechooser_shutdown(void)
+{
+    for (struct pending *p = pending_head; p; p = p->next) {
+        kill(-p->pid, SIGTERM);
+        remove(p->filename);
+        if (p->writing && p->state->config->create_help_file == 1) {
+            remove(p->path);
+        }
+    }
+}
+
 static int method_open_file(sd_bus_message *msg, void *data,
                             sd_bus_error *ret_error)
 {
@@ -576,104 +903,17 @@ static int method_open_file(sd_bus_message *msg, void *data,
         return ret;
     }
 
-    struct xdptf_request *req =
-        xdptf_request_create(sd_bus_message_get_bus(msg), handle);
-    if (req == NULL) {
-        return -ENOMEM;
-    }
-
     struct xdptf_state *state = data;
-    char **selected_files = NULL;
-    size_t num_selected_files = 0;
 
     set_current_folder(&state->config->modes->open_mode,
                        &state->config->default_dir, &current_folder);
 
     char *escaped_path = escape_path(current_folder);
-    ret = exec_filechooser(data, false, multiple, directory, escaped_path,
-                           &selected_files, &num_selected_files);
-
     free(current_folder);
-    if (ret) {
-        goto cleanup;
-    }
 
-    logprint(INFO, "filechooser: (OpenFile) Number of selected files: %d",
-             num_selected_files);
-    for (size_t i = 0; i < num_selected_files; i++) {
-        logprint(DEBUG, "filechooser: %d. %s", i, selected_files[i]);
-    }
-
-    if (state->config->modes->open_mode == MODE_LAST_DIR) {
-        set_last_dir(selected_files[num_selected_files - 1]);
-    }
-
-    sd_bus_message *reply = NULL;
-    ret = sd_bus_message_new_method_return(msg, &reply);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_append(reply, "u", PORTAL_RESPONSE_SUCCESS, 1);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_open_container(reply, 'a', "{sv}");
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_open_container(reply, 'e', "sv");
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_append_basic(reply, 's', "uris");
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_open_container(reply, 'v', "as");
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_append_strv(reply, selected_files);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_close_container(reply);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_close_container(reply);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_close_container(reply);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_send(NULL, reply, NULL);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    sd_bus_message_unref(reply);
-
-cleanup:
-    for (size_t i = 0; i < num_selected_files; i++) {
-        free(selected_files[i]);
-    }
-    free(selected_files);
+    ret = pending_start(state, msg, handle, false, multiple, directory,
+                        escaped_path, NULL);
     free(escaped_path);
-
-    xdptf_request_destroy(req);
     return ret;
 }
 
@@ -758,11 +998,6 @@ static int method_save_file(sd_bus_message *msg, void *data,
     }
 
     struct xdptf_state *state = data;
-    struct xdptf_request *req =
-        xdptf_request_create(sd_bus_message_get_bus(msg), handle);
-    if (req == NULL) {
-        return -ENOMEM;
-    }
 
     set_current_folder(&state->config->modes->save_mode,
                        &state->config->default_dir, &current_folder);
@@ -780,9 +1015,7 @@ static int method_save_file(sd_bus_message *msg, void *data,
         }
     }
 
-    size_t num_selected_files = 0;
     size_t path_size = 2 + strlen(current_folder) + strlen(current_name);
-    char **selected_files = NULL;
     char *path = malloc(path_size);
     snprintf(path, path_size, "%s/%s", current_folder, current_name);
 
@@ -807,7 +1040,6 @@ static int method_save_file(sd_bus_message *msg, void *data,
         if (temp_file == NULL) {
             logprint(ERROR, "filechooser: could not write temporary file");
             free(path);
-            xdptf_request_destroy(req);
             return -1;
         }
         fputs(instructions, temp_file);
@@ -816,122 +1048,10 @@ static int method_save_file(sd_bus_message *msg, void *data,
 
     char *escaped_path = escape_path(path);
 
-    ret = exec_filechooser(data, true, false, false, escaped_path,
-                           &selected_files, &num_selected_files);
-
-    logprint(INFO, "filechooser: (SaveFile) Number of selected files: %d",
-             num_selected_files);
-
-    if (ret || num_selected_files != 1) {
-        // if file created
-        if (state->config->create_help_file == 1) {
-            remove(path);
-        }
-        if (num_selected_files > 1) {
-            logprint(ERROR, "filechooser: too many selected SaveFiles");
-        }
-        goto cleanup;
-    }
-
-    // if file created
-    if (state->config->create_help_file == 1) {
-        char *decoded = NULL;
-        logprint(DEBUG, "filechooser: %s", selected_files[0]);
-        decoded = malloc(1 + strlen(selected_files[0]));
-        uri_decode(selected_files[0], strlen(selected_files[0]), decoded);
-
-        struct stat statbuf;
-        if (stat(decoded + strlen(PATH_PREFIX), &statbuf) == 0) {
-            if (S_ISDIR(statbuf.st_mode)) {
-                logprint(ERROR,
-                         "filechooser: selected SaveFile is a directory");
-                free(decoded);
-                goto cleanup;
-            }
-        } else {
-            logprint(ERROR, "filechooser: failed to stat '%s': %s",
-                     decoded + strlen(PATH_PREFIX), strerror(errno));
-            free(decoded);
-            goto cleanup;
-        }
-
-        if (strcmp(decoded + strlen(PATH_PREFIX), path) != 0) {
-            remove(path);
-        }
-        free(decoded);
-    }
-
-    if (state->config->modes->save_mode == MODE_LAST_DIR) {
-        set_last_dir(selected_files[num_selected_files - 1]);
-    }
-
-    sd_bus_message *reply = NULL;
-    ret = sd_bus_message_new_method_return(msg, &reply);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_append(reply, "u", PORTAL_RESPONSE_SUCCESS, 1);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_open_container(reply, 'a', "{sv}");
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_open_container(reply, 'e', "sv");
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_append_basic(reply, 's', "uris");
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_open_container(reply, 'v', "as");
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_append_strv(reply, selected_files);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_close_container(reply);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_close_container(reply);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_message_close_container(reply);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    ret = sd_bus_send(NULL, reply, NULL);
-    if (ret < 0) {
-        goto cleanup;
-    }
-
-    sd_bus_message_unref(reply);
-
-cleanup:
-    for (size_t i = 0; i < num_selected_files; i++) {
-        free(selected_files[i]);
-    }
-    free(selected_files);
+    /* pending_start owns `path` from here on */
+    ret = pending_start(state, msg, handle, true, false, false, escaped_path,
+                        path);
     free(escaped_path);
-    free(path);
-
-    xdptf_request_destroy(req);
     return ret;
 }
 
