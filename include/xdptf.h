@@ -10,6 +10,7 @@
 #endif
 
 #include "config.h"
+#include <stddef.h>
 
 struct xdptf_state {
     sd_bus *bus;
@@ -18,6 +19,9 @@ struct xdptf_state {
 
 struct xdptf_request {
     sd_bus_slot *slot;
+    /* called when the frontend sends Request.Close while a dialog is open */
+    void (*close_cb)(void *data);
+    void *close_data;
 };
 
 enum {
@@ -27,6 +31,13 @@ enum {
 };
 
 int xdptf_filechooser_init(struct xdptf_state *state);
+
+/* Dialogs run asynchronously; the main loop drives them with these. */
+struct pollfd;
+size_t xdptf_filechooser_pending_count(void);
+size_t xdptf_filechooser_pollfds(struct pollfd *fds);
+void xdptf_filechooser_reap(void);
+void xdptf_filechooser_shutdown(void);
 
 struct xdptf_request *xdptf_request_create(sd_bus *bus, const char *object_path);
 void xdptf_request_destroy(struct xdptf_request *req);

@@ -1,11 +1,16 @@
 #include "config.h"
 #include "logger.h"
 #include "xdptf.h"
+#include <errno.h>
 #include <getopt.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 static volatile bool keep_running = true;
@@ -184,7 +189,12 @@ int main(int argc, char *argv[])
 
     xdptf_filechooser_init(&state);
 
+    struct pollfd *fds = NULL;
+    size_t fds_cap = 0;
+
     while (keep_running) {
+        xdptf_filechooser_reap();
+
         ret = sd_bus_process(state.bus, NULL);
         if (ret < 0) {
             logprint(ERROR, "dbus: sd_bus_process failed: %s", strerror(-ret));
@@ -194,15 +204,55 @@ int main(int argc, char *argv[])
         if (ret > 0)
             continue;
 
-        ret = sd_bus_wait(state.bus, (uint64_t)-1);
-        if (ret < 0) {
-            logprint(ERROR, "dbus: sd_bus_wait failed: %s", strerror(-ret));
+        /* Wait for the bus and for any open dialog to exit. */
+        size_t npending = xdptf_filechooser_pending_count();
+        if (npending + 1 > fds_cap) {
+            struct pollfd *grown = realloc(fds, (npending + 1) * sizeof(*fds));
+            if (grown == NULL) {
+                logprint(ERROR, "poll: out of memory");
+                break;
+            }
+            fds = grown;
+            fds_cap = npending + 1;
+        }
+
+        int busfd = sd_bus_get_fd(state.bus);
+        int events = sd_bus_get_events(state.bus);
+        if (busfd < 0 || events < 0) {
+            logprint(ERROR, "dbus: cannot poll bus: %s",
+                     strerror(-(busfd < 0 ? busfd : events)));
             break;
         }
+        fds[0].fd = busfd;
+        fds[0].events = (short)events;
+        fds[0].revents = 0;
+        xdptf_filechooser_pollfds(fds + 1);
+
+        int timeout_ms = -1;
+        uint64_t timeout_us = 0;
+        if (sd_bus_get_timeout(state.bus, &timeout_us) >= 0 &&
+            timeout_us != UINT64_MAX) {
+            struct timespec ts;
+            clock_gettime(CLOCK_MONOTONIC, &ts);
+            uint64_t now = (uint64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+            timeout_ms =
+                timeout_us <= now ? 0 : (int)((timeout_us - now + 999) / 1000);
+        }
+
+        ret = poll(fds, npending + 1, timeout_ms);
+        if (ret < 0 && errno != EINTR) {
+            logprint(ERROR, "poll failed: %s", strerror(errno));
+            break;
+        }
+
+        xdptf_filechooser_reap();
 
         logprint(TRACE, "dbus: flushing bus");
         sd_bus_flush(state.bus);
     }
+
+    xdptf_filechooser_shutdown();
+    free(fds);
 
     cleanup(&bus, &slot, &config, &configfile);
     return EXIT_SUCCESS;
