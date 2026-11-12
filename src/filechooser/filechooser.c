@@ -251,10 +251,12 @@ static int exec_filechooser(void *data, bool writing, bool multiple,
         ssize_t nread = getline(&line, &n, fp);
         if (ferror(fp)) {
             free(line);
-            for (size_t j = 0; j < i - 1; j++) {
+            for (size_t j = 0; j < i; j++) {
                 free((*selected_files)[j]);
             }
             free(*selected_files);
+            *selected_files = NULL;
+            *num_selected_files = 0;
             fclose(fp);
             remove(filename);
             free(filename);
@@ -804,6 +806,8 @@ static int method_save_file(sd_bus_message *msg, void *data,
         FILE *temp_file = fopen(path, "w");
         if (temp_file == NULL) {
             logprint(ERROR, "filechooser: could not write temporary file");
+            free(path);
+            xdptf_request_destroy(req);
             return -1;
         }
         fputs(instructions, temp_file);

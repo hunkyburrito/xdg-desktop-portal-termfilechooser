@@ -20,15 +20,15 @@ static int method_close(sd_bus_message *msg, void *data,
     }
 
     ret = sd_bus_send(NULL, reply, NULL);
+    sd_bus_message_unref(reply);
     if (ret < 0) {
         return ret;
     }
 
-    sd_bus_message_unref(reply);
-
     xdptf_request_destroy(req);
 
-    return 0;
+    // handled: returning 0 makes sd-bus also send an UnknownMethod error
+    return 1;
 }
 
 static const sd_bus_vtable request_vtable[] = {
